@@ -1,3 +1,5 @@
+""" simple example of kessler-python function usage"""
+
 import sys
 sys.path.append(".")
 import numpy as np
@@ -19,8 +21,8 @@ z_np = np.ones((nx,nz,ny), "float32") * 700.
 rainnc_np = np.zeros((nx,ny), "float32")
 rainncv_np = np.zeros((nx,ny), "float32")
 
-print "qv_przed", qv_np, qc_np
+print "in kessler_call, before calling", qv_np, qc_np
 kessler(nx, ny, nz, dt_in,
             t_np, qv_np, qc_np, qr_np, rho_np, pii_np, dz8w_np, z_np,
             rainnc_np, rainncv_np)
-print "qv po", qv_np, qc_np, qr_np
+print "in kessler_call, after calling ", qv_np, qc_np, qr_np

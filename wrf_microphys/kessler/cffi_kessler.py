@@ -1,3 +1,5 @@
+""" python binding of the kessler scheme """
+
 from cffi import FFI
 import numpy as np
 from stale import xlv, cp, EP2, SVP1, SVP2, SVP3, SVPT0, rhowater
@@ -27,9 +29,7 @@ def kessler(nx, ny, nz, dt_in,
 
 #its etc. is not actually used; not sure why its etc. is used but can (should?) be the same as ids etc.
     [ims, ime, ids, ide, its, ite] = [1, nx] * 3
-
     [jms, jme, jds, jde, jts, jte] = [1, ny] * 3
-
     [kms, kme, kds, kde, kts, kte] = [1, nz] * 3
 
     lib.c_kessler(t, qv, qc, qr, rho, pii                 

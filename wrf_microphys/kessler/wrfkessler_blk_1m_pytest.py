@@ -1,9 +1,11 @@
+"""prepares kessler-python function for tests """
+
 import numpy as np
 from cffi_kessler import kessler
 from stale import Rd, cp #TODO ujednolicic stale
 import pdb
 
-#TODO
+#TODO: general constants
 Rv = 461.4
 p0 = 1000.e2
 
@@ -30,18 +32,14 @@ def pottemp(press, T):
      return np.array(theta, "float32")
 
 def adj_cellwise(press_in, T_in, qv_in, qc_in, qr_in, dt):
-#    pdb.set_trace()
     pii = exner(press_in)
     rho = density(qv_in, press_in, T_in)
     th = pottemp(press_in, T_in)
     qv = np.array(qv_in, "float32")
     qc = np.array(qc_in, "float32")
     qr = np.array(qr_in, "float32")
-    print "qv_przed", qv, qc, pii, rho
     kessler(nx, ny, nz, dt,
             th, qv, qc, qr, rho, pii, dz8w, z,
             rainnc, rainncv)
-    print "qv po", qv, qc, qr
     return qv, qc
 
-#adj_cellwise(np.array([9.e4]), t_np, qv_np, qc_np, qr_np, 1)
