@@ -1,6 +1,6 @@
 import sys
 sys.path.append(".")
-sys.path.append("../../../tests/python/wrf_microphys/kessler/")
+sys.path.append("wrf_microphys/kessler/")
 #sys.path.append("/Users/dorota/Library/Enthought/Canopy_64bit/User/lib/python2.7/site-packages")
 #sys.path.append("/Users/dorota/libcloudphxx/build/tests/python")
 import pytest
@@ -9,9 +9,9 @@ import pdb
 
 from numpy import array as arr_t
 
-from libcloudphxx_blk_1m_pytest import adj_cellwise
+#from libcloudphxx_blk_1m_pytest import adj_cellwise
 #uncomment if you want wrf kessler; should be run from different directory TODO!
-#from wrf_blk_1m_pytest import adj_cellwise
+from wrfkessler_blk_1m_pytest import adj_cellwise
 
 # typical values a example
 press_0 = arr_t([900.e2  ])
@@ -37,7 +37,7 @@ def condensation(press = None, T = None,
     return rv, rc
 
 
-#@pytest.mark.skipif
+@pytest.mark.skipif
 @pytest.mark.parametrize("arg", [
     {'T':arr_t([255.])},    pytest.mark.xfail({'T':arr_t([500. ])}),
     {'rv':arr_t([-1.e-5])}, pytest.mark.xfail({'rv':arr_t([0.1 ])}),
