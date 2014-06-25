@@ -1,6 +1,6 @@
 module kessler_wrap
 
-  use iso_c_binding, only: c_int, c_float
+  use iso_c_binding, only: c_int, c_double
   use module_mp_kessler 
 
   implicit none
@@ -19,19 +19,19 @@ contains
     integer(c_int), intent(in), value:: ids,ide, jds,jde, kds,kde, & 
                                         ims,ime, jms,jme, kms,kme, & 
                                         its,ite, jts,jte, kts,kte
-    real(c_float),  intent(in), value:: xlv, cp,                   &
+    real(c_double),  intent(in), value:: xlv, cp,                   &
                                         EP2,SVP1,SVP2,SVP3,SVPT0,  &
                                         rhowater
-    real(c_float),  intent(inout):: t(ims:ime,kms:kme,jms:jme),    &
+    real(c_double),  intent(inout):: t(ims:ime,kms:kme,jms:jme),    &
                                    qv(ims:ime,kms:kme,jms:jme),    &
                                    qc(ims:ime,kms:kme,jms:jme),    &
                                    qr(ims:ime,kms:kme,jms:jme)
-    real(c_float),  intent(in)::  rho(ims:ime,kms:kme,jms:jme),    &
+    real(c_double),  intent(in)::  rho(ims:ime,kms:kme,jms:jme),    &
                                   pii(ims:ime,kms:kme,jms:jme),    &
                                  dz8w(ims:ime,kms:kme,jms:jme),    &
                                     z(ims:ime,kms:kme,jms:jme)
-    real(c_float),  intent(in), value:: dt_in
-    real(c_float),  intent(inout):: RAINNC(ims:ime,jms:jme),       &
+    real(c_double),  intent(in), value:: dt_in
+    real(c_double),  intent(inout):: RAINNC(ims:ime,jms:jme),       &
                                    RAINNCV(ims:ime,jms:jme)
     
     print*, "in kessler_wrap, before calling ", ims, t(1,1,1), qv(1,1,1), qc(1,1,1)
