@@ -13,33 +13,30 @@ nx = 1
 ny = 1
 nz = 1
 
-dz8w = np.ones((nx,nz,ny), "float32") * 20.
-z = np.ones((nx,nz,ny), "float32") * 700.
-rainnc = np.zeros((nx,ny), "float32")
-rainncv = np.zeros((nx,ny), "float32")
+dz8w = np.ones((nx,nz,ny)) * 20.
+z = np.ones((nx,nz,ny)) * 700.
+rainnc = np.zeros((nx,ny))
+rainncv = np.zeros((nx,ny))
 
 def exner(press):
-    return np.array((press/1.e5)**(Rd/cp), "float32")
+    return np.array((press/1.e5)**(Rd/cp))
 
 def density(rv, press, T):
     #TODO check, if it's full rho
     R_tot = (Rd + rv*Rv) / (1. + rv)
     rho = press / R_tot / T
-    return np.array(rho, "float32")
+    return np.array(rho)
 
 def pottemp(press, T):
      theta = T * (p0 / press)**(Rd/cp) 
-     return np.array(theta, "float32")
+     return np.array(theta)
 
 def adj_cellwise(press_in, T_in, qv_in, qc_in, qr_in, dt):
     pii = exner(press_in)
     rho = density(qv_in, press_in, T_in)
     th = pottemp(press_in, T_in)
-    qv = np.array(qv_in, "float32")
-    qc = np.array(qc_in, "float32")
-    qr = np.array(qr_in, "float32")
     kessler(nx, ny, nz, dt,
-            th, qv, qc, qr, rho, pii, dz8w, z,
+            th, qv_in, qc_in, qr_in, rho, pii, dz8w, z,
             rainnc, rainncv)
-    return qv, qc
+    return qv_in, qc_in
 
