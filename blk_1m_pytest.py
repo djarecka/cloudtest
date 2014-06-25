@@ -9,11 +9,11 @@ import pdb
 
 from numpy import array as arr_t
 
-#from libcloudphxx_blk_1m_pytest import adj_cellwise
+from libcloudphxx_blk_1m_pytest import adj_cellwise
 #uncomment if you want wrf kessler; should be run from different directory TODO!
-from wrfkessler_blk_1m_pytest import adj_cellwise
+#from wrfkessler_blk_1m_pytest import adj_cellwise
 
-# typical values a example
+# typical values as an example
 press_0 = arr_t([900.e2  ])
 th_0   = arr_t([291.8])
 T_0    = arr_t([283.15])
@@ -27,7 +27,7 @@ def condensation(press = None, T = None,
 
     print "\n na poczatku srawdzam, czy ma qv", rv
     #pdb.set_trace()
-    T = th if T!=None else T_0.copy()
+    T = T if T!=None else T_0.copy()
     rv = rv if rv!=None else rv_0.copy()
     rc = rc if rc!=None else rc_0.copy()
     rr = rr if rr!=None else rr_0.copy()
@@ -37,7 +37,7 @@ def condensation(press = None, T = None,
     return rv, rc
 
 
-@pytest.mark.skipif
+#@pytest.mark.skipif
 @pytest.mark.parametrize("arg", [
     {'T':arr_t([255.])},    pytest.mark.xfail({'T':arr_t([500. ])}),
     {'rv':arr_t([-1.e-5])}, pytest.mark.xfail({'rv':arr_t([0.1 ])}),
@@ -70,7 +70,7 @@ def test_exeptions_wrongvalue(arg):
          {"rv" :  arr_t([8.85e-3]), "rc" :  arr_t([1.15e-3])}), # supersat. leads to cond.
     ])
 #TODO zastanowic sie nad epsilonem
-def test_expected_output_evapcond(arg, expected, epsilon = 0.13):
+def test_expected_output_evapcond(arg, expected, epsilon = 0.1):
     print "\n w test_expected value przed", arg
     rv, rc = condensation(**arg)
     #print "rv, rc po", rv, rc
