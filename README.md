@@ -1,6 +1,6 @@
 Work in progress!
 
-Codes for testing microphysical scheme used in atmospheric numerical models.
+Codes for testing microphysical schemes used in atmospheric numerical models.
 
 Simple examples of usage:
 
