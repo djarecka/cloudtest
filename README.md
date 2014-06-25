@@ -5,7 +5,8 @@ Codes for testing microphysical scheme used in atmospheric numerical models.
 Simple examples of usage:
 
 * 1-moment schemes
-====================
+______________________
+
 ** libcloudph 1-moment
  - be sure that in blk_1m_pytest adj_cellwise is imported from libcloudphxx_blk_1m_pytes (TODO!)
  - >python2.7 -m pytest -s blk_1m_pytest.py
@@ -20,7 +21,8 @@ Simple examples of usage:
 
 
 * 2-moment schemes
-====================
+____________________
+
 ** libcloudph 2-moment
  - be sure that in blk_2m_pytest adj_cellwise is imported from libcloudphxx_blk_2m_pytest (TODO!)
  - >python2.7 -m pytest -s blk_2m_pytest.py
