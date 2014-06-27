@@ -2,7 +2,7 @@
 
 from cffi import FFI
 import numpy as np
-from stale import xlv, cp, EP2, SVP1, SVP2, SVP3, SVPT0, rhowater
+from constants_kessler import xlv, cp, EP2, SVP1, SVP2, SVP3, SVPT0, rhowater
 # TODO: should check all above!
 
 ffi = FFI()

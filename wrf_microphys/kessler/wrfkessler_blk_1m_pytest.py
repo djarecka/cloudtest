@@ -2,7 +2,7 @@
 
 import numpy as np
 from cffi_kessler import kessler
-from stale import Rd, cp #TODO ujednolicic stale
+from constants_kessler import Rd, cp #TODO ujednolicic stale
 import pdb
 
 #TODO: general constants
