@@ -9,5 +9,5 @@ foreach(test
     NAME ${id}
     COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest" ${test}
   )
-  set_tests_properties(${id} PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_SOURCE_DIR}")
+  set_tests_properties(${id} PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_SOURCE_DIR}:${CMAKE_SOURCE_DIR}/libcloudphxx")
 endforeach()
