@@ -9,5 +9,9 @@ foreach(test
     NAME ${id}
     COMMAND ${PYTHON_EXECUTABLE} "-m" "pytest" ${test}
   )
-  set_tests_properties(${id} PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_SOURCE_DIR}:${CMAKE_SOURCE_DIR}/libcloudphxx")
+  set(PYTHONPATH "${CMAKE_SOURCE_DIR}")
+  set(PYTHONPATH "${PYTHONPATH}:${CMAKE_SOURCE_DIR}/libcloudphxx")
+  set(PYTHONPATH "${PYTHONPATH}:${CMAKE_SOURCE_DIR}/wrf_microphys/kessler")
+  set(PYTHONPATH "${PYTHONPATH}:${CMAKE_BINARY_DIR}/wrf_microphys/kessler")
+  set_tests_properties(${id} PROPERTIES ENVIRONMENT "PYTHONPATH=${PYTHONPATH}")
 endforeach()

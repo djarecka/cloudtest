@@ -4,3 +4,4 @@ find_package(PythonInterp REQUIRED)
 enable_testing()
 
 add_subdirectory(tests)
+add_subdirectory(wrf_microphys)

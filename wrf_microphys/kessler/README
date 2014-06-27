@@ -1,12 +1,10 @@
 The kessler microphysical scheme from WRF model written in Fortran95 is called from Python using the ccfi library. 
 
 First, you have to get the kessler module from WRF model.
-The code is available for free after registration, follow the tutorial (you don't need WPS, only WRF ARW):
-http://www2.mmm.ucar.edu/wrf/OnLineTutorial/Introduction/start.htm
-The kessler module can be found here: WRFV3/phys/module_mp_kessler.F 
+The code is available for free at:
+http://www2.mmm.ucar.edu/wrf/users/download/get_sources.html
 
-Once you have module_mp_kessler.F, you have to change extension to "f90": 
-> mv  module_mp_kessler.F  module_mp_kessler.f90
+Once you have downloaded it, unpack it to /usr/local/src or alike.
 
 To make a share library - libkessler.so, the C wrapper - kessler_wrap.f90 has to be also compiled. Example of compilation using  gfortran 4.8.2 (-fdefault-real-8 for double precision):
 > gfortran -fdefault-real-8 -c -fPIC module_mp_kessler.f90 -o module_mp_kessler.o
