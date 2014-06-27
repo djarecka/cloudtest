@@ -1,3 +1,8 @@
+# TODO: search for pytest
+# TODO: search for cffi
+# TODO: search for numpy
+# TODO: search for libcloudphxx
+
 foreach(test 
   "blk_1m_libcloudphxx;-s;${CMAKE_SOURCE_DIR}/tests/blk_1m_pytest.py;--libname=libcloudphxx_blk_1m_pytest" 
   "blk_1m_wrfkessler;-s;${CMAKE_SOURCE_DIR}/tests/blk_1m_pytest.py;--libname=wrfkessler_blk_1m_pytest"
