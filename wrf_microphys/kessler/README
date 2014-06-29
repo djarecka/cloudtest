@@ -1,26 +1,19 @@
 The kessler microphysical scheme from WRF model written in Fortran95 is called from Python using the ccfi library. 
 
 First, you have to get the kessler module from WRF model.
-The code is available for free after registration, follow the tutorial (you don't need WPS, only WRF ARW):
-http://www2.mmm.ucar.edu/wrf/OnLineTutorial/Introduction/start.htm
-The kessler module can be found here: WRFV3/phys/module_mp_kessler.F 
+The code is available for free at:
+http://www2.mmm.ucar.edu/wrf/users/download/get_sources.html
 
-Once you have module_mp_kessler.F, you have to change extension to "f90": 
-> mv  module_mp_kessler.F  module_mp_kessler.f90
+Once you have downloaded it, unpack it to /usr/local/src or alike.
+The location of WRF source tree can be communicated to CMake with
+the WRF_SRC_PATH environment variable, e.g. (using bash):
 
-To make a share library - libkessler.so, the C wrapper - kessler_wrap.f90 has to be also compiled. Example of compilation using  gfortran 4.8.2 (-fdefault-real-8 for double precision):
-> gfortran -fdefault-real-8 -c -fPIC module_mp_kessler.f90 -o module_mp_kessler.o
-> gfortran -fdefault-real-8 -shared -fPIC module_mp_kessler.o kessler_wrap.f90 -o libkessler.so
+$ WRF_SRC_PATH=/tmp/WRFV3 cmake ..
 
 Now you can call python code - kessler_call.py, that calls python-kessler function defined in cffi_kessler.py using a foreign function interface (tested with python 2.7 and cffi 0.8.2):
 > python kessler_call.py
 
 The kessler_call.py is just a simple example of calling kessler for a one grid point.
-
-problems and issues...
-* If can not find the libkessler.so try:
-LD_LIBRARY_PATH=.
-export LD_LIBRARY_PATH
 
 *Single precision:
 If you want to compile with singe precision, you should skip the -fdefault-real-8 option, change double to float in the C-binding part (kessler_wrap.f90 and cffi_kessler.py), and ask explicitly numpy to creat float32 array (kessler_call.py). Please see the versions before June 25th, 2014.  
