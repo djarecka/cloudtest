@@ -5,7 +5,7 @@ import sys
 sys.path.append(os.path.join(os.getcwd(), '.'))
 sys.path.append(os.path.join(os.getcwd(), '..'))
 sys.path.append(os.path.join(os.getcwd(), '../wrf_microphys/kessler/'))
-
+sys.path.append(os.path.join(os.getcwd(), '../libcloudphxx/'))
 
 def pytest_addoption(parser):
     parser.addoption("--libname", action="append", default=[],
