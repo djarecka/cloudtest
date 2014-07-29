@@ -12,6 +12,7 @@ import analytic_blk_1m_pytest as an_blk
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
+
 # typical values as an example
 press_0 = arr_t([900.e2  ])
 th_0   = arr_t([291.8])
@@ -48,21 +49,23 @@ def cond_all(libname, libname_wrf, rc_0, sup_lim, sup_step, temp_0, press_0):
     rc_wrf_l = []
     r_rsat_an_l = []
     rsat_an = an_blk.mixrat_sat(temp_0, press_0) 
-    for rv_0 in np.arange(rsat_an, rsat_an + sup_lim, sup_step):
+    for rv_0 in np.arange(rsat_an - sup_lim, rsat_an + sup_lim + sup_step, sup_step):
         print "\n w test_expected value przed",rv_0, rc_0
         rv_xx, rc_xx = condensation(lib=libname, T=arr_t(temp_0), press = arr_t(press_0),
                                     rv=arr_t(rv_0), rc=arr_t(rc_0))
         rv_wrf, rc_wrf = condensation(lib=libname_wrf, T=arr_t(temp_0),
                                       press = arr_t(press_0),
                                       rv=arr_t(rv_0), rc=arr_t(rc_0))
+        #pdb.set_trace()
         delta_an = an_blk.delta_r(rv_0, temp_0, press_0) 
-        rv_an, rc_an = rv_0 - delta_an,  delta_an
+        rv_an, rc_an = rv_0 - delta_an, rc_0 + delta_an
         r_rsat_an = rv_0 - rsat_an
+        #pdb.set_trace()
         #TODO bardzo dziwne sa te tablice...0-d array nie mozna indeksowac
         #import pdb
         #pdb.set_trace()
         rc_an_l.append(rc_an - rc_0)
-        rc_xx_l.append(rc_xx)
+        rc_xx_l.append(rc_xx - rc_0)
         rc_wrf_l.append(rc_wrf - rc_0)
         r_rsat_an_l.append(r_rsat_an)
     print "rc_xx po", rc_xx_l,"\n", "rc_erf", rc_wrf_l, "\n", "rc_an", rc_an_l
@@ -73,21 +76,28 @@ def cond_all(libname, libname_wrf, rc_0, sup_lim, sup_step, temp_0, press_0):
 
 
 def figure_plot(temp_list, libname, libname_wrf, rc_0, sup_lim, sup_step, plotname):    
-    fig = plt.figure(1, figsize = (6.5,10))
+    fig = plt.figure(1, figsize = (14.5,6))
     for nr, temp in enumerate(temp_list):
-        ax = plt.subplot(len(temp_list),1, nr+1)
+        ax = plt.subplot(1, len(temp_list), nr+1)
         r_rsat, c_xx, c_wrf, c_an = cond_all(libname, libname_wrf, rc_0,
                                              sup_lim, sup_step,
                                              temp_0 = temp, press_0 = 900.e2)
 
-        fig = plt.figure(1, figsize = (6.5,5))
-        plt.plot(r_rsat, c_an, "b", r_rsat, c_xx, "r", r_rsat, c_wrf, "g" )
+        fig = plt.figure(1, figsize = (6.5,5.5))
+        plt.plot(r_rsat, c_an, "b", r_rsat, c_xx, "r", r_rsat, c_wrf, "g",
+                 r_rsat, len(r_rsat)*[0], 'k--', len(c_an)*[0], c_an, 'k--' )
         plt.legend(["analytic","libcloudphxx", "wrf_kessler"],
                    loc=2, prop = FontProperties(size=10))
         plt.title(str(temp),  fontsize=14)
-        if nr == len(temp_list)-1:
-            plt.xlabel(r'$rv_0 - rv_{sat0}$', fontsize=14)
-        plt.ylabel(r'$\Delta rc$', fontsize=14)
+        if nr == 0:
+            plt.ylabel(r'$\Delta rc$', fontsize=14)
+        plt.xlabel(r'$rv_0 - rv_{sat0}$', fontsize=14)
+        ax.set_xlim(-1.*sup_lim,  sup_lim)
+        ax.set_ylim(min(c_an), max(c_an))
+
+        for item in plt.xticks()[1] + plt.yticks()[1]:
+            item.set_fontsize(10)
+
     plt.savefig(plotname + ".pdf")
     plt.show()
 
@@ -96,10 +106,7 @@ def figure_plot_all(temp_list):
     Libname_wrf = "wrfkessler_blk_1m_pytest" #TODO: nie widzi libkessler.so (musialam przekopiowac)
 
     figure_plot(temp_list, libname=Libname, libname_wrf=Libname_wrf,
-                rc_0=0., sup_lim=3e-3, sup_step=0.2e-3, plotname="cond_comp")
-#chyba parowanie nie ma sensu, bo jest saturation adjustment
-#    figure_plot(temp_list, libname=Libname, libname_wrf=Libname_wrf,
-#                rc_0=5.e-4, sup_lim=-3e-3, sup_step=-0.2e-3, plotname="evap_comp")
+                rc_0=5.e-4, sup_lim=.6e-3, sup_step=0.1e-3, plotname="cond_evap_comp")
 
 
 figure_plot_all([278.15, 283.15, 288.15])
