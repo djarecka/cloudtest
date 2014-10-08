@@ -1,0 +1,11 @@
+The Morrison 2moment microphysical scheme written in Fortran95 is called from Python using the ccfi library.
+This is NOT the official scheme from WRF!
+
+TODO: getting the f90 file....
+
+To make a share library - libmorrison_2momNc.so (using gfortran and double precision):
+> gfortran -fdefault-real-8 -c -fPIC module_mp_morr_two_moment_Ncpredicted.f90 -o module_mp_morr_two_moment_Ncpredicted.o
+> gfortran -fdefault-real-8 -shared -fPIC module_mp_morr_two_moment_Ncpredicted.o morrison_2momNc_wrap.f90 -o libmorrison_2momNc.so
+
+Simple example of usage:
+> python morrison_2momNc_call.py
