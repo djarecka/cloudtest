@@ -7,19 +7,18 @@ sys.path.append("libcloudphxx/")
 import inspect
 import pdb
 import numpy as np
-from numpy import array as arr_t
-import analytic_blk_1m_pytest as an_blk
+import analytic_blk_1m_pytest as an
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 
 # typical values as an example
-press_0 = arr_t([900.e2  ])
-th_0   = arr_t([291.8])
-T_0    = arr_t([283.15])
-rv_0   = arr_t([8.e-3])
-rc_0   = arr_t([5.e-4])
-rr_0   = arr_t([0.  ])
+press_0 = np.array([900.e2  ])
+th_0   = np.array([291.8])
+T_0    = np.array([283.15])
+rv_0   = np.array([8.e-3])
+rc_0   = np.array([5.e-4])
+rr_0   = np.array([0.  ])
 dt_0   = 1
 
 def condensation(lib, press = None, T = None,
@@ -48,16 +47,17 @@ def cond_all(libname, libname_wrf, rc_0, sup_lim, sup_step, temp_0, press_0):
     rc_xx_l = []
     rc_wrf_l = []
     r_rsat_an_l = []
-    rsat_an = an_blk.mixrat_sat(temp_0, press_0) 
+    rsat_an = an.mixrat_sat(temp_0, press_0) 
     for rv_0 in np.arange(rsat_an - sup_lim, rsat_an + sup_lim + sup_step, sup_step):
         print "\n w test_expected value przed",rv_0, rc_0
-        rv_xx, rc_xx = condensation(lib=libname, T=arr_t(temp_0), press = arr_t(press_0),
-                                    rv=arr_t(rv_0), rc=arr_t(rc_0))
-        rv_wrf, rc_wrf = condensation(lib=libname_wrf, T=arr_t(temp_0),
-                                      press = arr_t(press_0),
-                                      rv=arr_t(rv_0), rc=arr_t(rc_0))
+        rv_xx, rc_xx = condensation(lib=libname, T=np.array(temp_0), 
+                                    press = np.array(press_0),
+                                    rv=np.array(rv_0), rc=np.array(rc_0))
+        rv_wrf, rc_wrf = condensation(lib=libname_wrf, T=np.array(temp_0),
+                                      press = np.array(press_0),
+                                      rv=np.array(rv_0), rc=np.array(rc_0))
         #pdb.set_trace()
-        delta_an = an_blk.delta_r(rv_0, temp_0, press_0) 
+        delta_an = an.delta_r(rv_0, temp_0, press_0) 
         rv_an, rc_an = rv_0 - delta_an, rc_0 + delta_an
         r_rsat_an = rv_0 - rsat_an
         #pdb.set_trace()
