@@ -1,6 +1,7 @@
 import sys
 sys.path.append(".")
 sys.path.append("wrf_microphys/kessler/")
+sys.path.append("wrf_microphys/morrison_2momNc/")
 sys.path.append("libcloudphxx/")
 #sys.path.append("/Users/dorota/Library/Enthought/Canopy_64bit/User/lib/python2.7/site-packages")
 #sys.path.append("/Users/dorota/libcloudphxx/build/tests/python")
@@ -48,12 +49,13 @@ def condensation(lib, lib_type, press = None, T = None,
 
 
 #TODO tylko dla przypadku gdy rc=0...
-def cond_all(libname, libname_2m, libname_wrf, rc_0, sup_lim, sup_step, 
+def cond_all(libname, libname_2m, libname_wrf, libname_2mor, rc_0, sup_lim, sup_step, 
              temp_0, press_0):
     rc_an_l = []
     rc_xx_l = []
     rc_2xx_l = []
     rc_wrf_l = []
+    rc_2mor_l = []
     r_rsat_an_l = []
     rsat_an = an.mixrat_sat(temp_0, press_0) 
     for rv_0 in np.arange(rsat_an - sup_lim, rsat_an + sup_lim + sup_step, sup_step):
@@ -67,6 +69,10 @@ def cond_all(libname, libname_2m, libname_wrf, rc_0, sup_lim, sup_step,
         rv_wrf, rc_wrf = condensation(lib=libname_wrf, lib_type=1, T=np.array(temp_0),
                                       press = np.array(press_0),
                                       rv=np.array(rv_0), rc=np.array(rc_0))
+        rv_2mor, rc_2mor = condensation(lib=libname_2mor, lib_type=2, T=np.array(temp_0),
+                                      press = np.array(press_0),
+                                      rv=np.array(rv_0), rc=np.array(rc_0))
+
         #pdb.set_trace()
         delta_an = an.delta_r(rv_0, temp_0, press_0) 
         rv_an, rc_an = rv_0 - delta_an, rc_0 + delta_an
@@ -79,29 +85,33 @@ def cond_all(libname, libname_2m, libname_wrf, rc_0, sup_lim, sup_step,
         rc_xx_l.append(rc_xx - rc_0)
         rc_2xx_l.append(rc_2xx - rc_0)
         rc_wrf_l.append(rc_wrf - rc_0)
+        rc_2mor_l.append(rc_2mor - rc_0)
         r_rsat_an_l.append(r_rsat_an)
-    print "rc_xx po", rc_xx_l,"\n", "rc_2xx po", rc_2xx_l,"\n","rc_wrf", rc_wrf_l, "\n", "rc_an", rc_an_l
-    return r_rsat_an_l, rc_xx_l, rc_2xx_l, rc_wrf_l, rc_an_l 
+    print "rc_xx po", rc_xx_l,"\n", "rc_2xx po", rc_2xx_l,"\n","rc_wrf", rc_wrf_l, "\n", "rc_2mor", rc_2mor_l, "\n", "rc_an", rc_an_l
+    return r_rsat_an_l, rc_xx_l, rc_2xx_l, rc_wrf_l, rc_2mor_l, rc_an_l 
 #    for key, value in expected.items():
 #        print "\n key, valuu, eval(key)", key, value, eval(key)
 #        assert abs(eval(key) - value) <= epsilon * abs(value)
 
 
-def figure_plot(temp_list, libname_1m, libname_2m, libname_wrf, 
+def figure_plot(temp_list, libname_1m, libname_2m, libname_wrf, libname_2mor, 
                 rc_0, sup_lim, sup_step, plotname):    
     fig = plt.figure(1, figsize = (14.5,6))
     for nr, temp in enumerate(temp_list):
         ax = plt.subplot(1, len(temp_list), nr+1)
-        r_rsat, c_xx, c_2xx, c_wrf, c_an = cond_all(libname_1m, libname_2m, 
-                                                    libname_wrf, rc_0,
-                                                    sup_lim, sup_step,
-                                                    temp_0 = temp, press_0 = 900.e2)
+        r_rsat, c_xx, c_2xx, c_wrf, c_2mor, c_an = cond_all(libname_1m, libname_2m, 
+                                                            libname_wrf, libname_2mor, 
+                                                            rc_0,
+                                                            sup_lim, sup_step,
+                                                            temp_0 = temp, 
+                                                            press_0 = 900.e2)
 
         fig = plt.figure(1, figsize = (6.5,5.5))
         plt.plot(r_rsat, c_an, "b", r_rsat, c_xx, "r", r_rsat, c_2xx, "r .", 
-                 r_rsat, c_wrf, "g",
+                 r_rsat, c_wrf, "g", r_rsat, c_2mor, "g.",
                  r_rsat, len(r_rsat)*[0], 'k--', len(c_an)*[0], c_an, 'k--' )
-        plt.legend(["analytic","libcloudphxx_1m", "libcloudphxx_2m", "wrf_kessler"],
+        plt.legend(["analytic","libcloudphxx_1m", "libcloudphxx_2m", 
+                    "wrf_kessler", "morrison_2m",],
                    loc=2, prop = FontProperties(size=10))
         plt.title(str(temp),  fontsize=14)
         if nr == 0:
@@ -120,9 +130,10 @@ def figure_plot_all(temp_list):
     Libname_1m = "libcloudphxx_blk_1m_pytest"
     Libname_2m = "libcloudphxx_blk_2m_pytest"
     Libname_wrf = "wrfkessler_blk_1m_pytest" #TODO: nie widzi libkessler.so (musialam przekopiowac)
-
+    Libname_2mor = "wrfmorrison_blk_2m_pytest"
     figure_plot(temp_list, 
-                libname_1m=Libname_1m, libname_2m=Libname_2m, libname_wrf=Libname_wrf,
+                libname_1m=Libname_1m, libname_2m=Libname_2m, 
+                libname_wrf=Libname_wrf, libname_2mor=Libname_2mor,
                 rc_0=5.e-4, sup_lim=.6e-3, sup_step=0.1e-3, plotname="cond_evap_comp")
 
 
