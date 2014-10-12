@@ -23,5 +23,5 @@ def adj_cellwise(press, T, rv, rc, rr, dt):
     rho_d = np.array(an.density_dry(rv, press, T))
     th_d = np.array(an.pottemp_dry(rv, press, T))
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
-    return rv, rc
+    return rv, rc, rr
 
