@@ -19,8 +19,8 @@ T_0    = np.array([283.15])
 rv_0   = np.array([8.e-3])
 rc_0   = np.array([5.e-4])
 rr_0   = np.array([0.  ])
-nc_0   = np.array([1.e5]) #TODO
-nr_0   = np.array([1.e5])#TODO
+nc_0   = np.array([1.e8]) #TODO
+nr_0   = np.array([1.e7])#TODO
 dt_0   = 1
 
 def condensation(lib, lib_type, press = None, T = None,
@@ -80,7 +80,7 @@ def cond_all(libname, libname_2m, libname_wrf, rc_0, sup_lim, sup_step,
         rc_2xx_l.append(rc_2xx - rc_0)
         rc_wrf_l.append(rc_wrf - rc_0)
         r_rsat_an_l.append(r_rsat_an)
-    print "rc_xx po", rc_xx_l,"\n", "rc_erf", rc_wrf_l, "\n", "rc_an", rc_an_l
+    print "rc_xx po", rc_xx_l,"\n", "rc_2xx po", rc_2xx_l,"\n","rc_wrf", rc_wrf_l, "\n", "rc_an", rc_an_l
     return r_rsat_an_l, rc_xx_l, rc_2xx_l, rc_wrf_l, rc_an_l 
 #    for key, value in expected.items():
 #        print "\n key, valuu, eval(key)", key, value, eval(key)
@@ -98,7 +98,7 @@ def figure_plot(temp_list, libname_1m, libname_2m, libname_wrf,
                                                     temp_0 = temp, press_0 = 900.e2)
 
         fig = plt.figure(1, figsize = (6.5,5.5))
-        plt.plot(r_rsat, c_an, "b", r_rsat, c_xx, "r", r_rsat, c_xx, "r .", 
+        plt.plot(r_rsat, c_an, "b", r_rsat, c_xx, "r", r_rsat, c_2xx, "r .", 
                  r_rsat, c_wrf, "g",
                  r_rsat, len(r_rsat)*[0], 'k--', len(c_an)*[0], c_an, 'k--' )
         plt.legend(["analytic","libcloudphxx_1m", "libcloudphxx_2m", "wrf_kessler"],
