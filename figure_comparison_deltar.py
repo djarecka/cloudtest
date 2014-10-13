@@ -11,6 +11,13 @@ import numpy as np
 import analytic_blk_1m_pytest as an
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
+import importlib
+
+# library used in comparison
+Libxx_1m = "libcloudphxx_blk_1m_pytest"
+Libxx_2m = "libcloudphxx_blk_2m_pytest"
+Libwrf_kes = "wrfkessler_blk_1m_pytest" #TODO: nie widzi libkessler.so (musialam przekopiowac)               
+Lib_2mor = "wrfmorrison_blk_2m_pytest"
 
 
 # typical values as an example
@@ -28,11 +35,8 @@ def condensation(lib, lib_type, press = None, T = None,
                  rv = None, rc = None, rr = None,
                  nc = None, nr = None, dt=dt_0):
 
-    import importlib
     lib_adj = importlib.import_module(lib)
-    
-    print "\n na poczatku srawdzam, czy ma qv", rv
-    #pdb.set_trace()
+
     T = T if T!=None else T_0.copy()
     rv = rv if rv!=None else rv_0.copy()
     rc = rc if rc!=None else rc_0.copy()
@@ -47,8 +51,7 @@ def condensation(lib, lib_type, press = None, T = None,
         rv, rc, nc, rr, nr = lib_adj.adj_cellwise(press, T, rv, rc, nc, rr, nr, dt)
     return rv, rc
 
-
-#TODO tylko dla przypadku gdy rc=0...
+#condensation/evaporation if no rain
 def cond_all(libname, libname_2m, libname_wrf, libname_2mor, rc_0, sup_lim, sup_step, 
              temp_0, press_0):
     rc_an_l = []
@@ -73,68 +76,60 @@ def cond_all(libname, libname_2m, libname_wrf, libname_2mor, rc_0, sup_lim, sup_
                                       press = np.array(press_0),
                                       rv=np.array(rv_0), rc=np.array(rc_0))
 
-        #pdb.set_trace()
         delta_an = an.delta_r(rv_0, temp_0, press_0) 
         rv_an, rc_an = rv_0 - delta_an, rc_0 + delta_an
         r_rsat_an = rv_0 - rsat_an
-        #pdb.set_trace()
-        #TODO bardzo dziwne sa te tablice...0-d array nie mozna indeksowac
-        #import pdb
-        #pdb.set_trace()
+
         rc_an_l.append(rc_an - rc_0)
         rc_xx_l.append(rc_xx - rc_0)
         rc_2xx_l.append(rc_2xx - rc_0)
         rc_wrf_l.append(rc_wrf - rc_0)
         rc_2mor_l.append(rc_2mor - rc_0)
         r_rsat_an_l.append(r_rsat_an)
+
     print "rc_xx po", rc_xx_l,"\n", "rc_2xx po", rc_2xx_l,"\n","rc_wrf", rc_wrf_l, "\n", "rc_2mor", rc_2mor_l, "\n", "rc_an", rc_an_l
     return r_rsat_an_l, rc_xx_l, rc_2xx_l, rc_wrf_l, rc_2mor_l, rc_an_l 
-#    for key, value in expected.items():
-#        print "\n key, valuu, eval(key)", key, value, eval(key)
-#        assert abs(eval(key) - value) <= epsilon * abs(value)
 
 
-def figure_plot(temp_list, libname_1m, libname_2m, libname_wrf, libname_2mor, 
-                rc_0, sup_lim, sup_step, plotname):    
-    fig = plt.figure(1, figsize = (14.5,6))
-    for nr, temp in enumerate(temp_list):
-        ax = plt.subplot(1, len(temp_list), nr+1)
-        r_rsat, c_xx, c_2xx, c_wrf, c_2mor, c_an = cond_all(libname_1m, libname_2m, 
-                                                            libname_wrf, libname_2mor, 
-                                                            rc_0,
-                                                            sup_lim, sup_step,
-                                                            temp_0 = temp, 
-                                                            press_0 = 900.e2)
+def figure_plot(ax, temp, libxx_1m, libxx_2m, libwrf_kes, lib_2mor, 
+                rc_0, sup_lim, sup_step, label_y):    
+    r_rsat, c_xx, c_2xx, c_wrf, c_2mor, c_an = cond_all(libxx_1m, libxx_2m, 
+             libwrf_kes, lib_2mor, rc_0, sup_lim, sup_step,
+             temp_0 = temp, press_0 = 900.e2)
 
-        fig = plt.figure(1, figsize = (6.5,5.5))
-        plt.plot(r_rsat, c_an, "b", r_rsat, c_xx, "r", r_rsat, c_2xx, "r .", 
-                 r_rsat, c_wrf, "g", r_rsat, c_2mor, "g.",
-                 r_rsat, len(r_rsat)*[0], 'k--', len(c_an)*[0], c_an, 'k--' )
-        plt.legend(["analytic","libcloudphxx_1m", "libcloudphxx_2m", 
-                    "wrf_kessler", "morrison_2m",],
-                   loc=2, prop = FontProperties(size=10))
-        plt.title(str(temp),  fontsize=14)
-        if nr == 0:
-            plt.ylabel(r'$\Delta rc$', fontsize=14)
-        plt.xlabel(r'$rv_0 - rv_{sat0}$', fontsize=14)
-        ax.set_xlim(-1.*sup_lim,  sup_lim)
-        ax.set_ylim(min(c_an), max(c_an))
+    plt.plot(r_rsat, c_an, "b", r_rsat, c_xx, "r", r_rsat, c_2xx, "r .", 
+             r_rsat, c_wrf, "g", r_rsat, c_2mor, "g.",
+             r_rsat, len(r_rsat)*[0], 'k--', len(c_an)*[0], c_an, 'k--' )
+    plt.legend(["analytic","libcloudphxx_1m", "libcloudphxx_2m", 
+                "wrf_kessler", "morrison_2m",],
+               loc=2, prop = FontProperties(size=10))
+    plt.title(str(temp),  fontsize=14)
+    if label_y:
+        plt.ylabel(r'$\Delta rc$', fontsize=14)
+    plt.xlabel(r'$rv_0 - rv_{sat0}$', fontsize=14)
+    ax.set_xlim(-1.*sup_lim,  sup_lim)
+    ax.set_ylim(min(c_an), max(c_an))
 
-        for item in plt.xticks()[1] + plt.yticks()[1]:
-            item.set_fontsize(10)
+    for item in plt.xticks()[1] + plt.yticks()[1]:
+        item.set_fontsize(10)
 
-    plt.savefig(plotname + ".pdf")
-    plt.show()
+
 
 def figure_plot_all(temp_list):
-    Libname_1m = "libcloudphxx_blk_1m_pytest"
-    Libname_2m = "libcloudphxx_blk_2m_pytest"
-    Libname_wrf = "wrfkessler_blk_1m_pytest" #TODO: nie widzi libkessler.so (musialam przekopiowac)
-    Libname_2mor = "wrfmorrison_blk_2m_pytest"
-    figure_plot(temp_list, 
-                libname_1m=Libname_1m, libname_2m=Libname_2m, 
-                libname_wrf=Libname_wrf, libname_2mor=Libname_2mor,
-                rc_0=5.e-4, sup_lim=.6e-3, sup_step=0.1e-3, plotname="cond_evap_comp")
+
+    fig = plt.figure(1, figsize = (14.5,6))
+    label_y = False
+    for nr, temp in enumerate(temp_list):
+        ax = plt.subplot(1, len(temp_list), nr+1)
+        if nr == 0:
+            label_y=True
+        figure_plot(ax, temp, libxx_1m=Libxx_1m, libxx_2m=Libxx_2m, 
+                    libwrf_kes=Libwrf_kes, lib_2mor=Lib_2mor,
+                    rc_0=5.e-4, sup_lim=.6e-3, sup_step=0.1e-3, 
+                    label_y=label_y)
+
+    plt.savefig("cond_evap_comp.pdf")
+    plt.show()
 
 
 figure_plot_all([278.15, 283.15, 288.15])
