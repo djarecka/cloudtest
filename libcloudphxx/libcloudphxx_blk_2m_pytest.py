@@ -37,9 +37,9 @@ def adj_cellwise(press, T, rv, rc, nc, rr, nr, dt):
 
     rho_d = np.array(an.density_dry(rv, press, T))
     th_d = np.array(an.pottemp_dry(rv, press, T))
-    print "libcloudphxx_blk_2m, before calling", rv, rc, dot_nc
+    print "libcloudphxx_blk_2m, before calling", rv, rc, dot_nc, dt
     libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
                               rho_d, th_d, rv, rc, nc, rr, nr, dt)
     print "libcloudphxx_blk_2m, after calling", rv, rc, dot_rc, dot_nc, dot_th
-    return rv + dot_rv, rc + dot_rc, nc + dot_nc, rr + dot_rr, nr + dot_nr
+    return rv + dot_rv*dt, rc + dot_rc*dt, nc + dot_nc*dt, rr + dot_rr*dt, nr + dot_nr*dt
 
