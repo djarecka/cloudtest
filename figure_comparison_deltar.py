@@ -29,7 +29,7 @@ rc_0   = np.array([5.e-4])
 rr_0   = np.array([0.  ])
 nc_0   = np.array([1.e8]) #TODO
 nr_0   = np.array([1.e7])#TODO
-dt_0   = 1
+dt_0   = 10.
 
 def condensation(lib, lib_type, press = None, T = None,
                  rv = None, rc = None, rr = None,
@@ -108,7 +108,7 @@ def figure_plot(ax, temp, libxx_1m, libxx_2m, libwrf_kes, lib_2mor,
         plt.ylabel(r'$\Delta rc$', fontsize=14)
     plt.xlabel(r'$rv_0 - rv_{sat0}$', fontsize=14)
     ax.set_xlim(-1.*sup_lim,  sup_lim)
-    ax.set_ylim(min(c_an), max(c_an))
+    #ax.set_ylim(min(c_an), max(c_an))
 
     for item in plt.xticks()[1] + plt.yticks()[1]:
         item.set_fontsize(10)
@@ -118,17 +118,17 @@ def figure_plot(ax, temp, libxx_1m, libxx_2m, libwrf_kes, lib_2mor,
 def figure_plot_all(temp_list):
 
     fig = plt.figure(1, figsize = (14.5,6))
-    label_y = False
+    label_y = True
     for nr, temp in enumerate(temp_list):
         ax = plt.subplot(1, len(temp_list), nr+1)
-        if nr == 0:
-            label_y=True
+        if nr > 0:
+            label_y=False
         figure_plot(ax, temp, libxx_1m=Libxx_1m, libxx_2m=Libxx_2m, 
                     libwrf_kes=Libwrf_kes, lib_2mor=Lib_2mor,
                     rc_0=5.e-4, sup_lim=.6e-3, sup_step=0.1e-3, 
                     label_y=label_y)
 
-    plt.savefig("cond_evap_comp.pdf")
+    plt.savefig("cond_evap_comp_nc1e8_dt10.pdf")
     plt.show()
 
 
