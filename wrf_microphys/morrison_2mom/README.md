@@ -5,12 +5,12 @@ Preparing the fortran file:
   * the Morrison schme is in the `phys` directory: `module_mp_morr_two_moment.F`
   * running cpp to obtain .f90 file (TODO):
    
-    $ cpp -P -traditional -DEM_CORE=1 -DNMM_CORE=0 -DCOAMPS_CORE=0 -DDA_CORE=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM -DNO_IEEE_MODULE  -DDM_PARALLEL -DSTUBMPI module_mp_morr_two_moment.F > module_mp_morr_two_moment.f90
+    `$ cpp -P -traditional -DEM_CORE=1 -DNMM_CORE=0 -DCOAMPS_CORE=0 -DDA_CORE=0 -DIWORDSIZE=4 -DDWORDSIZE=8 -DRWORDSIZE=4 -DLWORDSIZE=4 -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM -DNO_IEEE_MODULE  -DDM_PARALLEL -DSTUBMPI module_mp_morr_two_moment.F > module_mp_morr_two_moment.f90`
    
    * adjusting the fortran file to cffi/python codes:
 
 
-    $ patch < module_mp_morr_two_moment_adjustment.txt
+    $ `patch < module_mp_morr_two_moment_adjustment.txt`
 
 Making a share library - libmorrison_2mom.so (using gfortran and double precision):
 
