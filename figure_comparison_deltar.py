@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 sys.path.append("wrf_microphys/kessler/")
-sys.path.append("wrf_microphys/morrison_2momNc/")
+sys.path.append("wrf_microphys/morrison_2mom/")
 sys.path.append("libcloudphxx/")
 #sys.path.append("/Users/dorota/Library/Enthought/Canopy_64bit/User/lib/python2.7/site-packages")
 #sys.path.append("/Users/dorota/libcloudphxx/build/tests/python")
