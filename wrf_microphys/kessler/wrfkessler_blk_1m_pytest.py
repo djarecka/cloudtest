@@ -38,5 +38,5 @@ def adj_cellwise(press_in, T_in, qv_in, qc_in, qr_in, dt):
     kessler(nx, ny, nz, dt,
             th, qv_in, qc_in, qr_in, rho, pii, dz8w, z,
             rainnc, rainncv)
-    return qv_in, qc_in
+    return qv_in, qc_in, qr_in
 
