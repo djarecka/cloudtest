@@ -9,8 +9,7 @@ Preparing the fortran file:
    
    * adjusting the fortran file to cffi/python codes:
 
-
-    $ `patch < module_mp_morr_two_moment_adjustment.txt`
+    `$ patch < module_mp_morr_two_moment_adjustment.txt`
 
 Making a share library - libmorrison_2mom.so (using gfortran and double precision):
 
