@@ -12,7 +12,8 @@ def zero_cffiarray(nz):
      tab  = ffi.cast("double*", tab_np.__array_interface__['data'][0])
      return tab
 
-def morrison_2mom_simplewarm(nx, ny, nz, qc_np, qr_np, nr_np,
+#TODO:nc_np is not needed, but I want to call it as other scheme
+def morrison_2mom_simplewarm(nx, ny, nz, qc_np, qr_np, nc_np, nr_np,
                              temp_np, qv_np, press_np, dz_np, dt_in):
                                
      ffi.cdef("void c_init(int hail_opt);", override=True)
