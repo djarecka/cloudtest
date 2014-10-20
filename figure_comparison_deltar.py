@@ -29,7 +29,7 @@ rc_0   = np.array([5.e-4])
 rr_0   = np.array([0.  ])
 nc_0   = np.array([1.e8]) #TODO
 nr_0   = np.array([1.e7])#TODO
-dt_0   = 10.
+dt_0   = 1.
 
 def condensation(lib, lib_type, press = None, T = None,
                  rv = None, rc = None, rr = None,
@@ -128,7 +128,7 @@ def figure_plot_all(temp_list):
                     rc_0=5.e-4, sup_lim=.6e-3, sup_step=0.1e-3, 
                     label_y=label_y)
 
-    plt.savefig("cond_evap_comp_nc1e8_dt10.pdf")
+    plt.savefig("cond_evap_comp_nc1e8.pdf")
     plt.show()
 
 
