@@ -10,7 +10,6 @@ def zero_cffiarray(nz):
      tab_np = np.zeros((nz))
      keepalive.append(tab_np)
      tab  = ffi.cast("double*", tab_np.__array_interface__['data'][0])
-     #print "w zero", tab[0] # daje zawsze 0.0
      return tab
 
 def morrison_2momNc_simplewarm(nx, ny, nz, qc_np, qr_np, nc_np, nr_np,
@@ -48,7 +47,6 @@ def morrison_2momNc_simplewarm(nx, ny, nz, qc_np, qr_np, nc_np, nr_np,
      QGSTEN, QRSTEN, QISTEN, QNISTEN, QCSTEN = (zero_cffiarray(nz) for i in range(5))
 
      print "cffi", QGSTEN, QRSTEN, QISTEN, QNISTEN, QCSTEN 
-     print "przeszlo"
      lib.c_init()
      lib.c_morr(QC3DTEN, QI3DTEN, QNI3DTEN, QR3DTEN,       
                                  NC3DTEN, NI3DTEN, NS3DTEN, NR3DTEN,              

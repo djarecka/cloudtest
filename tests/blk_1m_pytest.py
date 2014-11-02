@@ -1,8 +1,6 @@
 import sys
 sys.path.append(".")
 sys.path.append("wrf_microphys/kessler/")
-#sys.path.append("/Users/dorota/Library/Enthought/Canopy_64bit/User/lib/python2.7/site-packages")
-#sys.path.append("/Users/dorota/libcloudphxx/build/tests/python")
 import pytest
 import inspect
 import pdb
@@ -24,7 +22,7 @@ def condensation(lib, press = None, T = None,
     import importlib
     lib_adj = importlib.import_module(lib)
     
-    print "\n na poczatku srawdzam, czy ma qv", rv
+    print "\n initial value of qv", rv
     #pdb.set_trace()
     T = T if T!=None else T_0.copy()
     rv = rv if rv!=None else rv_0.copy()
@@ -44,7 +42,7 @@ def condensation(lib, press = None, T = None,
     {'rr':arr_t([-1.e-5])}, pytest.mark.xfail({'rr':arr_t([0.01])})
     ])
 def test_exeptions_wrongvalue(libname, arg):
-    print "\n jestem w test_exeption", arg
+    print "\n in test_exeption", arg
     with pytest.raises(Exception) as excinfo:
         condensation(lib=libname, **arg)
     #the line below can give you information about the exception 
@@ -70,7 +68,7 @@ def test_exeptions_wrongvalue(libname, arg):
     ])
 #TODO zastanowic sie nad epsilonem
 def test_expected_output_evapcond(libname, arg, expected, epsilon = 0.1):
-    print "\n w test_expected value przed", arg
+    print "\n in test_expected value before cond.", arg
     rv, rc = condensation(lib=libname, **arg)
     #print "rv, rc po", rv, rc
     for key, value in expected.items():

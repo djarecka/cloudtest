@@ -15,7 +15,7 @@ qr_np = np.ones((nx,nz,ny)) * 0.e-3
 press_np = np.ones((nx,nz,ny)) * 900.e2
 dz_np = np.ones((nx,nz,ny)) * 20.
 
-print "w call przed", qv_np, qc_np, nc_np, temp_np, qr_np
+print "w call before simplewarm", qv_np, qc_np, nc_np, temp_np, qr_np
 morrison_2momNc_simplewarm(nx, ny, nz, qc_np, qr_np, nc_np, nr_np,
                            temp_np, qv_np, press_np, dz_np, dt_in)
-print "w call po", qv_np, qc_np, nc_np, temp_np, qr_np
+print "w call after simplewarm", qv_np, qc_np, nc_np, temp_np, qr_np
