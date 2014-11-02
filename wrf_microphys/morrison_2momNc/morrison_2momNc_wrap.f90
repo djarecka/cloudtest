@@ -45,7 +45,7 @@ contains
                      QGSTEN(KTS:KTE), QRSTEN(KTS:KTE), QISTEN(KTS:KTE),         &
                      QNISTEN(KTS:KTE), QCSTEN(KTS:KTE)
     
-    print*, "foo",IMS, QC3DTEN(1), QC3D(1), NG3DTEN(1), T3D(1), QV3D(1)
+    print*, "in morrison wraper",IMS, QC3DTEN(1), QC3D(1), NG3DTEN(1), T3D(1), QV3D(1)
 
     
     call MORR_TWO_MOMENT_MICRO(QC3DTEN, QI3DTEN, QNI3DTEN, QR3DTEN, NC3DTEN,    &
