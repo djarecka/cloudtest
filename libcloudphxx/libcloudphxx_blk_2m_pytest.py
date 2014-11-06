@@ -18,14 +18,14 @@ import analytic_blk_1m_pytest as an
 #    opts.sedi = sedi
 #    return opts
 
-#TODO: should be an argument?
-distr = [{"mean_rd":.04e-6 / 2, "sdev_rd":1.4, "N_stp":60e6, "chem_b":.55},
-         {"mean_rd":.15e-6 / 2, "sdev_rd":1.6, "N_stp":40e6, "chem_b":.55}]
+#TODO: not needed for cond/evap!!!
+#distr = [{"mean_rd":.04e-6 / 2, "sdev_rd":1.4, "N_stp":60e6, "chem_b":.55},
+#         {"mean_rd":.15e-6 / 2, "sdev_rd":1.6, "N_stp":40e6, "chem_b":.55}]
 
 
 def adj_cellwise(press, T, rv, rc, nc, rr, nr, dt):
     opts = libcl.blk_2m.opts_t()
-    opts.dry_distros = distr
+#    opts.dry_distros = distr
 
     #TODO: should be always zero?
     dot_th = np.array([0.])
