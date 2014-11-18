@@ -27,8 +27,10 @@ install:
   - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
   - make
   - sudo make install
+  - cd ../..
 
 script:
+  - cd cloudtest
   - mkdir build
   - cd build
   - WRF_SRC_PATH=/tmp/WRFV3 cmake ..
