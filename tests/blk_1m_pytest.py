@@ -30,7 +30,7 @@ def condensation(lib, press = None, T = None,
     rr = rr if rr!=None else rr_0.copy()
     press = press if press!=None else press_0.copy()
     print "\n In condensation. Who is calling..?", inspect.stack()[1][3]
-    rv, rc = lib_adj.adj_cellwise(press, T, rv, rc, rr, dt)
+    rv, rc, rr = lib_adj.adj_cellwise(press, T, rv, rc, rr, dt)
     return rv, rc
 
 #TODO dodac odpowiednie IF
