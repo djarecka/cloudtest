@@ -29,8 +29,10 @@ def adj_cellwise(press, T, rv, dt, sstp=1):
     opts.coal = False
     opts.sstp_cond = sstp
 
-    rho_d = np.array(an.density_dry(rv, press, T))
-    th_d = np.array(an.pottemp_dry(rv, press, T))
+    # libcloud expects 1D numpy arrays even in 0D setup (to be fixed in libcloudph++)
+    rho_d = np.array([an.density_dry(rv, press, T)])
+    th_d = np.array([an.pottemp_dry(rv, press, T)])
+    rv = np.array([rv])
 
     print "before init", rv, th_d
     prtcls.init(th_d, rv, rho_d)

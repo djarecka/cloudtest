@@ -1,0 +1,38 @@
+language: cpp
+os:
+  - linux
+compiler:
+  - gcc
+
+before_install:
+  - sudo add-apt-repository "deb http://us.archive.ubuntu.com/ubuntu/ trusty main universe multiverse"
+  - sudo apt-get update
+
+install:
+  - if [[ $CXX == 'clang++' ]]; then sudo apt-get install --no-install-recommends clang; fi
+  - if [[ $CXX == 'g++'     ]]; then sudo apt-get install --no-install-recommends g++  ; fi
+  - sudo apt-get install --no-install-recommends libnetcdfc7
+  - sudo apt-get install --no-install-recommends gfortran libblitz0-dev cmake libboost-python-dev libthrust-dev libnetcdf-dev python-numpy python-cffi python-pytest
+
+  # WRF
+  - (cd /tmp; wget http://www2.mmm.ucar.edu/wrf/src/WRFV3.6.1.TAR.gz)
+  - (cd /tmp; tar xvzf WRFV3.6.1.TAR.gz)
+
+  # libcloudphxx
+  - cd ..
+  - git clone --depth=1 git://github.com/igfuw/libcloudphxx.git
+  - cd libcloudphxx
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+  - make
+  - sudo make install
+  - cd ../..
+
+script:
+  - cd cloudtest
+  - mkdir build
+  - cd build
+  - WRF_SRC_PATH=/tmp/WRFV3 cmake ..
+  - make
+  - make test || cat Testing/Temporary/LastTest.log / # "/" intentional! (just to make cat exit with an error code)
