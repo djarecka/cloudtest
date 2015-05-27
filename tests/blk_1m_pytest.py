@@ -67,7 +67,7 @@ def test_exeptions_wrongvalue(libname, arg):
          {"rv" :  arr_t([8.85e-3]), "rc" :  arr_t([1.15e-3])}), # supersat. leads to cond.
     ])
 #TODO zastanowic sie nad epsilonem
-def test_expected_output_evapcond(libname, arg, expected, epsilon = 0.1):
+def test_expected_output_evapcond(libname, arg, expected, epsilon = 0.2):
     print "\n in test_expected value before cond.", arg
     rv, rc = condensation(lib=libname, **arg)
     #print "rv, rc po", rv, rc
