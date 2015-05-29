@@ -1,18 +1,20 @@
 import sys
 sys.path.append(".")
+sys.path.append("../../")
 sys.path.append("wrf_microphys/kessler/")
 import pytest
 import inspect
 import pdb
-from numpy import array as arr_t
+import numpy as np
+import analytic_blk_1m_pytest as an_blk
 
 # typical values as an example
-press_0 = arr_t([900.e2  ])
-th_0   = arr_t([291.8])
-T_0    = arr_t([283.15])
-rv_0   = arr_t([8.e-3])
-rc_0   = arr_t([5.e-4])
-rr_0   = arr_t([0.  ])
+press_0 = np.array([900.e2  ])
+th_0   = np.array([291.8])
+T_0    = np.array([283.15])
+rv_0   = np.array([8.e-3])
+rc_0   = np.array([5.e-4])
+rr_0   = np.array([0.  ])
 dt_0   = 1
 
 #works for various library, during calling has to be added --libname=....
@@ -33,13 +35,25 @@ def condensation(lib, press = None, T = None,
     rv, rc, rr = lib_adj.adj_cellwise(press, T, rv, rc, rr, dt)
     return rv, rc
 
+def analytic_condensation(press = None, T = None, rv = None, rc = None):
+     T = T if T!=None else T_0.copy()
+     rv = rv if rv!=None else rv_0.copy()
+     rc = rc if rc!=None else rc_0.copy()
+     press = press if press!=None else press_0.copy()
+     r_an = {}
+     #calling analytical function calculating del_r for supersaturation adjustment
+     del_r = an_blk.delta_r(rv, rc, T, press)
+     r_an["rv"] = rv - del_r
+     r_an["rc"] = rc + del_r
+     return r_an
+
 #TODO dodac odpowiednie IF
 @pytest.mark.skipif
 @pytest.mark.parametrize("arg", [
-    {'T':arr_t([255.])},    pytest.mark.xfail({'T':arr_t([500. ])}),
-    {'rv':arr_t([-1.e-5])}, pytest.mark.xfail({'rv':arr_t([0.1 ])}),
-    {'rc':arr_t([-1.e-5])}, pytest.mark.xfail({'rc':arr_t([0.01])}),
-    {'rr':arr_t([-1.e-5])}, pytest.mark.xfail({'rr':arr_t([0.01])})
+    {'T':np.array([255.])},    pytest.mark.xfail({'T':np.array([500. ])}),
+    {'rv':np.array([-1.e-5])}, pytest.mark.xfail({'rv':np.array([0.1 ])}),
+    {'rc':np.array([-1.e-5])}, pytest.mark.xfail({'rc':np.array([0.01])}),
+    {'rr':np.array([-1.e-5])}, pytest.mark.xfail({'rr':np.array([0.01])})
     ])
 def test_exeptions_wrongvalue(libname, arg):
     print "\n in test_exeption", arg
@@ -49,29 +63,21 @@ def test_exeptions_wrongvalue(libname, arg):
     #print "exception info:", excinfo.value
     
 
-#TODO: wypisac znane outputy, moze tez theta?
-#TODO: polaczyc z plikiem analytic_blk_1m_pytest??
 #@pytest.mark.skipif
-@pytest.mark.parametrize("arg, expected", [
-        ({"rv" :  arr_t([0.]),     "rc" :  arr_t([0.])},
-         {"rv" :  arr_t([0.]),     "rc" :  arr_t([0.])}), # no water
-        ({"rv" :  arr_t([7.e-3]),  "rc" :  arr_t([0.])},
-         {"rv" :  arr_t([7.e-3]),  "rc" :  arr_t([0.])}), # no cl water and subsat.
-        ({"rv" :  arr_t([10.e-3]), "rc" :  arr_t([0.])},
-         {"rv" :  arr_t([9.44e-3]), "rc" :  arr_t([.56e-3])}), # no cl water and supersat.
-        ({"rv" :  arr_t([5.e-3]),  "rc" :  arr_t([1.e-3])},
-         {"rv" :  arr_t([6.e-3]),  "rc" :  arr_t([0.])}), # subsat. leads to coplete evap.
-        ({"rv" :  arr_t([8.e-3]),  "rc" :  arr_t([1.e-3])},
-         {"rv" :  arr_t([8.26e-3]), "rc" :  arr_t([0.74e-3])}), # subsat. leads to some evap.
-        ({"rv" :  arr_t([9.e-3]),  "rc" :  arr_t([1.e-3])},
-         {"rv" :  arr_t([8.85e-3]), "rc" :  arr_t([1.15e-3])}), # supersat. leads to cond.
+@pytest.mark.parametrize("arg", [
+        ({"rv" :  np.array([0.]),     "rc" :  np.array([0.])}), # no water
+        ({"rv" :  np.array([7.e-3]),  "rc" :  np.array([0.])}), # no cl water and subsat.
+        ({"rv" :  np.array([10.e-3]), "rc" :  np.array([0.])}), # no cl water and supersat.
+        ({"rv" :  np.array([5.e-3]),  "rc" :  np.array([1.e-3])}), # subsat. leads to coplete evap.
+        ({"rv" :  np.array([8.e-3]),  "rc" :  np.array([1.e-3])}), # subsat. leads to some evap.
+        ({"rv" :  np.array([9.e-3]),  "rc" :  np.array([1.e-3])}), # supersat. leads to cond.
     ])
 #TODO zastanowic sie nad epsilonem
-def test_expected_output_evapcond(libname, arg, expected, epsilon = 0.2):
+def test_expected_output_evapcond(libname, arg, epsilon = 0.2):
     print "\n in test_expected value before cond.", arg
+    r_an = analytic_condensation(**arg)
     rv, rc = condensation(lib=libname, **arg)
-    #print "rv, rc po", rv, rc
-    for key, value in expected.items():
-        print "\n key, valuu, eval(key)", key, value, eval(key)
-        assert abs(eval(key) - value) <= epsilon * abs(value)
+    for key, value in arg.items():
+        print "\n key, valuu, eval(key)", key, value, r_an[key]
+        assert abs(value - r_an[key]) <= epsilon * abs(r_an[key])
 

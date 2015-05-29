@@ -4,7 +4,7 @@ import pytest
 import inspect
 import pdb
 
-from numpy import array as arr_t
+import numpy as np
 import analytic_blk_1m_pytest as anpy
 from libcloudphxx  import common
 
