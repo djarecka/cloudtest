@@ -56,7 +56,7 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
     rr   = rr   + dot_rr * dt
     nr   = nr   + dot_nr * dt
     print "max qc po mikro", rc.max()
-    return th_d, rv, rc, nc, rr, nr
+    #return th_d, rv, rc, nc, rr, nr
 
 #libcl_2mom()
 
@@ -100,7 +100,8 @@ def main(scheme, nx=100):
 
             #TODO spr dlaczego musze przekazywac!!!
         if scheme == "2m":
-            th_d, rv, rc, nc, rr, nr = libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt)
+            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt)
+            #th_d, rv, rc, nc, rr, nr = libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt)
 
 
         #print " qc po mikro", rv
@@ -111,7 +112,7 @@ def main(scheme, nx=100):
 
 
 
-#main("2m") #dziala, ale nie przesuwa
+main("2m") #dziala, ale nie tak jakbym chciala
 #main("2m", nx=50) # nie dziala! mowi, ze th<0!
-main("1m", nx=50) # dziala (tylko, ze periodycznosci nie ma, ale to mniejsza z tym)
+#main("1m", nx=50) # dziala (tylko, ze periodycznosci nie ma, ale to mniejsza z tym)
 #main("1m") # dziala
