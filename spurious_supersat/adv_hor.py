@@ -49,21 +49,19 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
     dot_nr = np.zeros((nx,))
 
     
-    print "th przed mikro", th_d
+    print "nc min, max przed mikro", nc.min(), nc.max()
     libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
                               rho_d, th_d, rv, rc, nc, rr, nr, dt)
-    print "th po mikro", th_d + dot_th*dt # daje to samo - cos jest zle!
-     
+        
     th_d += dot_th * dt
     rv   += dot_rv * dt
     rc   += dot_rc * dt
     nc   += dot_nc * dt
     rr   += dot_rr * dt
     nr   += dot_nr * dt
-    print "max qc po mikro", rc.max(), dot_rc.max()
-    #return th_d, rv, rc, nc, rr, nr
+    print "nc min, max po mikro", nc.min(), nc.max()
 
-#libcl_2mom()
+
 
 def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     opts = libcl.blk_1m.opts_t()
@@ -74,58 +72,52 @@ def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     opts.accr = False
     opts.sedi = False
 
-    print "1m rc przed", rc
+    print "1m rc max, min przed mikro", rc.max(), rc.min()
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
-    print "1m rc po", rc
+    print "1m rc max, min po mikro", rc.max(), rc.min()
 
-#libcl_1mom()
 
-def main(scheme, nx=100):
+
+def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
     th_d = np.ones((nx,))* 287.
     rv = np.ones((nx,))* 2.e-3
     rc = np.zeros((nx,))
-    rc[10:20] = 1.e-3
+    rc[sl_sg] = 1.e-3
     rr = np.zeros((nx,))
     rho_d = np.ones((nx,))
     testowa = np.zeros((nx,))
-    testowa[10:20]= 1.
+    testowa[sl_sg]= 1.e4
     
     var_adv = [th_d, rv, rc, rr, testowa]
 
     if scheme == "2m":
            nc = np.zeros((nx,))
-           nc[10:20] = 1.e8
+           nc[sl_sg] = 1.e8
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
-    dt = 1.
-
-    plotting(rc)
-    for it in range(100):
+    for it in range(500):
         print "it", it
-        #print "qc przed adv", rc
+
+        print "testowa min, max przed adv", testowa.min(), testowa.max()
+        if scheme == "2m": print "nc min, max przed adv", nc.min(), nc.max()        
         for var in var_adv:
-            libmpdata.mpdata(var, .5, 1);
-        #print "qc po adv", rc
+            libmpdata.mpdata(var, crnt, 1);
+        if scheme == "2m": print "nc min, max po adv", nc.min(), nc.max()
+        print "testowa min, max po adv", testowa.min(), testowa.max()
 
         if scheme == "1m":
             libcl_1mom(rho_d, th_d, rv, rc, rr, dt)
 
-            #TODO spr dlaczego musze przekazywac!!!
         if scheme == "2m":
             libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
-            #th_d, rv, rc, nc, rr, nr = libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt)
-
-
-        #print " qc po mikro", rv
+        
 
         print "testowa po it = ", it
-        if it/10 * 10 == it:
+        if it/100 * 100 == it:
             plotting(nc)
 
 
 
-main("2m") #dziala, ale nie tak jakbym chciala
-#main("2m", nx=50) # nie dziala! mowi, ze th<0!
-#main("1m", nx=50) # dziala (tylko, ze periodycznosci nie ma, ale to mniejsza z tym)
-#main("1m") # dziala
+main("2m") 
+#main("1m") 
