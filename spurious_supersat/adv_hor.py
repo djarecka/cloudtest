@@ -49,13 +49,13 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
                               rho_d, th_d, rv, rc, nc, rr, nr, dt)
     print "th po mikro", th_d + dot_th*dt # daje to samo - cos jest zle!
      
-    th_d = th_d + dot_th * dt
-    rv   = rv   + dot_rv * dt
-    rc   = rc   + dot_rc * dt
-    nc   = nc   + dot_nc * dt
-    rr   = rr   + dot_rr * dt
-    nr   = nr   + dot_nr * dt
-    print "max qc po mikro", rc.max()
+    th_d =th_d + dot_th * dt
+    rv   += dot_rv * dt
+    rc   += dot_rc * dt
+    nc   += dot_nc * dt
+    rr   += dot_rr * dt
+    nr   += dot_nr * dt
+    print "max qc po mikro", rc.max(), dot_rc.max()
     #return th_d, rv, rc, nc, rr, nr
 
 #libcl_2mom()
@@ -63,8 +63,9 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
 def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     opts = libcl.blk_1m.opts_t()
 
+    print "1m rc przed", rc
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
-    
+    print "1m rc po", rc
 
 #libcl_1mom()
 
