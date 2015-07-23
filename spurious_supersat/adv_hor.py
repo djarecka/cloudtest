@@ -33,7 +33,7 @@ def plotting(prof):
     plt.show()
 
 
-def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
+def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
     opts = libcl.blk_2m.opts_t()
     opts.acti = False
     opts.cond = True
@@ -41,12 +41,12 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
     opts.accr = False
     opts.sedi = False
 
-    dot_th = np.zeros((100,))
-    dot_rv = np.zeros((100,))
-    dot_rc = np.zeros((100,))
-    dot_nc = np.zeros((100,))
-    dot_rr = np.zeros((100,))
-    dot_nr = np.zeros((100,))
+    dot_th = np.zeros((nx,))
+    dot_rv = np.zeros((nx,))
+    dot_rc = np.zeros((nx,))
+    dot_nc = np.zeros((nx,))
+    dot_rr = np.zeros((nx,))
+    dot_nr = np.zeros((nx,))
 
     
     print "th przed mikro", th_d
@@ -54,7 +54,7 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
                               rho_d, th_d, rv, rc, nc, rr, nr, dt)
     print "th po mikro", th_d + dot_th*dt # daje to samo - cos jest zle!
      
-    th_d =th_d + dot_th * dt
+    th_d += dot_th * dt
     rv   += dot_rv * dt
     rc   += dot_rc * dt
     nc   += dot_nc * dt
@@ -112,7 +112,7 @@ def main(scheme, nx=100):
 
             #TODO spr dlaczego musze przekazywac!!!
         if scheme == "2m":
-            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt)
+            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
             #th_d, rv, rc, nc, rr, nr = libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt)
 
 
