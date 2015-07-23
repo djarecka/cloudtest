@@ -93,7 +93,8 @@ def main(scheme, nx=100):
     var_adv = [th_d, rv, rc, rr, testowa]
 
     if scheme == "2m":
-           nc = np.ones((nx,))*1.e8
+           nc = np.zeros((nx,))
+           nc[10:20] = 1.e8
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
@@ -120,7 +121,7 @@ def main(scheme, nx=100):
 
         print "testowa po it = ", it
         if it/10 * 10 == it:
-            plotting(rc)
+            plotting(nc)
 
 
 
