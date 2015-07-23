@@ -35,6 +35,11 @@ def plotting(prof):
 
 def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
     opts = libcl.blk_2m.opts_t()
+    opts.acti = False
+    opts.cond = True
+    opts.acnv = False
+    opts.accr = False
+    opts.sedi = False
 
     dot_th = np.zeros((100,))
     dot_rv = np.zeros((100,))
@@ -62,6 +67,12 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt):
 
 def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     opts = libcl.blk_1m.opts_t()
+    opts.cond = True
+    opts.cevp = True
+    opts.revp = False
+    opts.conv = False
+    opts.accr = False
+    opts.sedi = False
 
     print "1m rc przed", rc
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
