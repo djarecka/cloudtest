@@ -35,11 +35,14 @@ def plotting(prof):
 
 def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
     opts = libcl.blk_2m.opts_t()
-    opts.acti = False
+    opts.acti = True
     opts.cond = True
     opts.acnv = False
     opts.accr = False
     opts.sedi = False
+    distr = [{"mean_rd":.04e-6 / 2, "sdev_rd":1.4, "N_stp":60e6, "chem_b":.55}]
+           #  {"mean_rd":.15e-6 / 2, "sdev_rd":1.6, "N_stp":40e6, "chem_b":.55}]
+    opts.dry_distros = distr
 
     dot_th = np.zeros((nx,))
     dot_rv = np.zeros((nx,))
@@ -48,23 +51,26 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
     dot_rr = np.zeros((nx,))
     dot_nr = np.zeros((nx,))
 
-    
+
     print "qc min, max przed mikro", rc.min(), rc.max()
-    try:
-        libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
+    print "nc min, max przed mikro", nc.min(), nc.max()
+    
+    libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
                               rho_d, th_d, rv, rc, nc, rr, nr, dt)
-    except:
-        print "rc min po mikro w try" ,(rc + dot_rc * dt).min()
-       
+    
+    print "rc min po mikro" ,(rc + dot_rc * dt).min(), (rc + dot_rc * dt).max()
+    print "nc min po mikro" ,(nc + dot_nc * dt).min(), (nc + dot_nc * dt).max()
+
     th_d += dot_th * dt
     rv   += dot_rv * dt
     rc   += dot_rc * dt
     nc   += dot_nc * dt
     rr   += dot_rr * dt
     nr   += dot_nr * dt
-    print "rc min, max po mikro", rc.min(), rc.max()
-
-
+    np.place(rc, rc<0, 0)
+    np.place(nc, nc<0, 0)
+    print "rc min, max po mikro i place", rc.min(), rc.max()
+    print "nc min, max po mikro i place", nc.min(), nc.max()
 
 def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     opts = libcl.blk_1m.opts_t()
@@ -95,7 +101,7 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
 
     if scheme == "2m":
            nc = np.zeros((nx,))
-           nc[sl_sg] = 1.e8
+           #nc[sl_sg] = 1.e8
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
@@ -119,8 +125,8 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
             #    pdb.set_trace()
                 
         print "testowa po it = ", it
-        if it/500 * 500 == it:
-            plotting(rc)
+        if (it+1)/500 * 500 == (it+1):
+            plotting(nc)
 
 
 
