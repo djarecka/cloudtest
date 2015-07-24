@@ -110,9 +110,11 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
             libcl_1mom(rho_d, th_d, rv, rc, rr, dt)
 
         if scheme == "2m":
-            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
-        
-
+            try:
+                libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
+            except:
+                pdb.set_trace()
+                
         print "testowa po it = ", it
         if it/500 * 500 == it:
             plotting(rc)
