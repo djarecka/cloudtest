@@ -50,9 +50,12 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
 
     
     print "qc min, max przed mikro", rc.min(), rc.max()
-    libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
+    try:
+        libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
                               rho_d, th_d, rv, rc, nc, rr, nr, dt)
-        
+    except:
+        print "rc min po mikro w try" ,(rc + dot_rc * dt).min()
+       
     th_d += dot_th * dt
     rv   += dot_rv * dt
     rc   += dot_rc * dt
@@ -110,10 +113,10 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
             libcl_1mom(rho_d, th_d, rv, rc, rr, dt)
 
         if scheme == "2m":
-            try:
-                libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
-            except:
-                pdb.set_trace()
+            #try:
+            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
+            #except:
+            #    pdb.set_trace()
                 
         print "testowa po it = ", it
         if it/500 * 500 == it:
