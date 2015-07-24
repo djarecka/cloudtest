@@ -49,7 +49,7 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
     dot_nr = np.zeros((nx,))
 
     
-    print "nc min, max przed mikro", nc.min(), nc.max()
+    print "qc min, max przed mikro", rc.min(), rc.max()
     libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
                               rho_d, th_d, rv, rc, nc, rr, nr, dt)
         
@@ -59,7 +59,7 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
     nc   += dot_nc * dt
     rr   += dot_rr * dt
     nr   += dot_nr * dt
-    print "nc min, max po mikro", nc.min(), nc.max()
+    print "rc min, max po mikro", rc.min(), rc.max()
 
 
 
@@ -96,14 +96,14 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
-    for it in range(500):
+    for it in range(1500):
         print "it", it
 
         print "testowa min, max przed adv", testowa.min(), testowa.max()
-        if scheme == "2m": print "nc min, max przed adv", nc.min(), nc.max()        
+        if scheme == "2m": print "qc min, max przed adv", rc.min(), rc.max()        
         for var in var_adv:
             libmpdata.mpdata(var, crnt, 1);
-        if scheme == "2m": print "nc min, max po adv", nc.min(), nc.max()
+        if scheme == "2m": print "qc min, max po adv", rc.min(), rc.max()
         print "testowa min, max po adv", testowa.min(), testowa.max()
 
         if scheme == "1m":
@@ -114,8 +114,8 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
         
 
         print "testowa po it = ", it
-        if it/100 * 100 == it:
-            plotting(nc)
+        if it/500 * 500 == it:
+            plotting(rc)
 
 
 
