@@ -26,10 +26,14 @@ def test():
 
 #test()
 
-def plotting(prof):
-
+def plotting(dct):
+    fig, tpl = plt.subplots(nrows=len(dct))
     plt.figure(1)
-    plt.plot(prof)
+    i=0
+    for k,v in dct.iteritems():
+      tpl[i].set_title(k)
+      tpl[i].plot(v)
+      i+=1
     plt.show()
 
 
@@ -86,8 +90,14 @@ def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     print "1m rc max, min po mikro", rc.max(), rc.min()
 
 
+def calc_RH(RH, rho_d, th_d, rv):
+    for i in range(len(RH)):
+	T = libcl.common.T(th_d[i], rho_d[i])
+	p = libcl.common.p(rho_d[i], rv[i], T)
+	p_v = rho_d[i] * rv[i] * libcl.common.R_v * T
+	RH[i] = p_v / libcl.common.p_vs(T)
 
-def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
+def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1500, outfreq=10):
     th_d = np.ones((nx,))* 287.
     rv = np.ones((nx,))* 2.e-3
     rc = np.zeros((nx,))
@@ -96,16 +106,19 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
     rho_d = np.ones((nx,))
     testowa = np.zeros((nx,))
     testowa[sl_sg]= 1.e4
+
+    RH1 = np.empty((nx,))
+    RH2 = np.empty((nx,))
     
     var_adv = [th_d, rv, rc, rr, testowa]
 
     if scheme == "2m":
            nc = np.zeros((nx,))
-           #nc[sl_sg] = 1.e8
+           nc[sl_sg] = 1.e8
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
-    for it in range(1500):
+    for it in range(nt):
         print "it", it
 
         print "testowa min, max przed adv", testowa.min(), testowa.max()
@@ -115,6 +128,8 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
         if scheme == "2m": print "qc min, max po adv", rc.min(), rc.max()
         print "testowa min, max po adv", testowa.min(), testowa.max()
 
+        calc_RH(RH1, rho_d, th_d, rv)
+
         if scheme == "1m":
             libcl_1mom(rho_d, th_d, rv, rc, rr, dt)
 
@@ -123,10 +138,12 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2):
             libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
             #except:
             #    pdb.set_trace()
+
+        calc_RH(RH2, rho_d, th_d, rv) 
                 
         print "testowa po it = ", it
-        if (it+1)/500 * 500 == (it+1):
-            plotting(nc)
+        if it % outfreq == 0:
+            plotting({"nc":nc, "rc":rc, "rv":rv, "th":th_d, "RH1":RH1, "RH2":RH2})
 
 
 
