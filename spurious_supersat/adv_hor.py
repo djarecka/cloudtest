@@ -12,7 +12,7 @@ import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
-
+import pdb
 
 def test():
     a = np.zeros((10,))
@@ -27,12 +27,12 @@ def test():
 #test()
 
 def plotting(dct):
-    fig, tpl = plt.subplots(nrows=len(dct))
-    plt.figure(1)
+    nrow = (len(dct)+1)/2
+    fig, tpl = plt.subplots(nrows=nrow, ncols=2, figsize=(10,8.5))
     i=0
     for k,v in dct.iteritems():
-      tpl[i].set_title(k)
-      tpl[i].plot(v)
+      tpl[i%nrow,i/nrow].set_title(k)
+      tpl[i%nrow,i/nrow].plot(v)
       i+=1
     plt.show()
 
@@ -97,11 +97,12 @@ def calc_RH(RH, rho_d, th_d, rv):
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * T
 	RH[i] = p_v / libcl.common.p_vs(T)
 
-def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1500, outfreq=10):
+def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=300, outfreq=100):
     th_d = np.ones((nx,))* 287.
     rv = np.ones((nx,))* 2.e-3
     rc = np.zeros((nx,))
-    rc[sl_sg] = 1.e-3
+    rv[sl_sg] += 1.5e-3
+    #rc[sl_sg] = 1.e-3 
     rr = np.zeros((nx,))
     rho_d = np.ones((nx,))
     testowa = np.zeros((nx,))
@@ -114,10 +115,11 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1500, outfr
 
     if scheme == "2m":
            nc = np.zeros((nx,))
-           nc[sl_sg] = 1.e8
+           #nc[sl_sg] = 1.e8
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
+    plotting({"nc":nc, "rc":rc, "rv":rv, "th":th_d, "RH1":RH1, "RH2":RH2})
     for it in range(nt):
         print "it", it
 
@@ -142,7 +144,7 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1500, outfr
         calc_RH(RH2, rho_d, th_d, rv) 
                 
         print "testowa po it = ", it
-        if it % outfreq == 0:
+        if (it+1) % outfreq == 0:
             plotting({"nc":nc, "rc":rc, "rv":rv, "th":th_d, "RH1":RH1, "RH2":RH2})
 
 
