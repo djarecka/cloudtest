@@ -97,21 +97,34 @@ def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
     print "1m rc max, min po mikro", rc.max(), rc.min()
 
-def libcl_spdr(rho_d, th_d, rv, dt, aerosol):
+def libcl_spdr_init(rho_d, th_d, rv, C, aerosol):
     opts_init = libcl.lgrngn.opts_init_t()
-#    opts_init.dry_distros = {kappa : distros.lognormal(n_tot, meanr, gstdv)}
-#    opts_init.dt = dt
 
-#    backend = libcl.lgrngn.backend_t.serial
-#    prtcls = libcl.lgrngn.factory(backend, opts_init)
+    def lognormal(lnr):
+        from math import exp, log, sqrt, pi
+        return aerosol["n_tot"] * exp(
+      -(lnr - log(aerosol["mean_r"]))**2 / 2 / log(aerosol["gstdev"])**2
+    ) / log(aerosol["gstdev"]) / sqrt(2*pi);
 
-#    opts = libcl.lgrngn.opts_t()
-#    opts.adve = False
-#    opts.sedi = False
-#    opts.cond = True
-#    opts.coal = False
-#    opts.sstp_cond = sstp
-    pass
+    opts_init.dt = dt  
+    opts_init.sd_conc_mean = aerosol["sd_conc"]
+    opts_init.dry_distros = {aerosol["kappa"]:lognormal}
+    opts_init.coal_switch = False
+    opts_init.sedi_switch = False
+    micro = lgrngn.factory(lgrngn.backend_t.serial, opts_init)
+    micro.init(th_d, rv, rho_d])
+    return micro
+
+def libcl_spdr(rho_d, th_d, rv, dt, aerosol, micro):
+    libopts = lgrngn.opts_t()
+    libopts.cond = True
+    libopts.coal = False
+    libopts.adve = True
+    libopts.sedi = False
+
+    micro.step_sync(libopts, th_d, rv, rhod)
+    
+    micro.step_async(libopts)
 
 
 def calc_RH(RH, Temp, rho_d, th_d, rv):
@@ -159,6 +172,9 @@ def main(scheme,
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
+    if scheme == "sd":
+        micro = libcl_spdr_init(rho_d, th_d, rv, C, aerosol)
+
     calc_RH(RH2, Temp, rho_d, th_d, rv)
     dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1}
     if   scheme == "2m":
@@ -182,7 +198,7 @@ def main(scheme,
         elif scheme == "2m":
             libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol)
         elif scheme == "sd":
-            libcl_spdr(rho_d, th_d, rv,                 dt, aerosol)
+            libcl_spdr(rho_d, th_d, rv,                 dt, aerosol, micro)
         else: 
             assert(False)
 
