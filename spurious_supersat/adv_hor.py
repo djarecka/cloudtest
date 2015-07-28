@@ -40,23 +40,28 @@ def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     plt.show()
 
 
-def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx):
+def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol):
     opts = libcl.blk_2m.opts_t()
     opts.acti = True
     opts.cond = True
     opts.acnv = False
     opts.accr = False
     opts.sedi = False
-    distr = [{"mean_rd":.04e-6 / 2, "sdev_rd":1.4, "N_stp":60e6, "chem_b":.55}]
-           #  {"mean_rd":.15e-6 / 2, "sdev_rd":1.6, "N_stp":40e6, "chem_b":.55}]
+    distr = [{
+      "mean_rd" : aerosol["meanr"], 
+      "sdev_rd" : aerosol["gstdv"], 
+      "N_stp"   : aerosol["n_tot"], 
+      "chem_b"  : aerosol["chem_b"]
+    }]
     opts.dry_distros = distr
 
-    dot_th = np.zeros((nx,))
-    dot_rv = np.zeros((nx,))
-    dot_rc = np.zeros((nx,))
-    dot_nc = np.zeros((nx,))
-    dot_rr = np.zeros((nx,))
-    dot_nr = np.zeros((nx,))
+    shp = th_d.shape
+    dot_th = np.zeros(shp)
+    dot_rv = np.zeros(shp)
+    dot_rc = np.zeros(shp)
+    dot_nc = np.zeros(shp)
+    dot_rr = np.zeros(shp)
+    dot_nr = np.zeros(shp)
 
 
     print "qc min, max przed mikro", rc.min(), rc.max()
@@ -92,10 +97,9 @@ def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
     print "1m rc max, min po mikro", rc.max(), rc.min()
 
-def libcl_lgr():
-#    opts_init = libcl.lgrngn.opts_init_t()
-    #TODO jakie dobre wartosci n_tot itp. dlaczego w parcel trzeba bylo definiowac lognormal?
-#    opts_init.dry_distros =  {kappa : distros.lognormal(n_tot, meanr, gstdv)}
+def libcl_spdr(rho_d, th_d, rv, dt, aerosol):
+    opts_init = libcl.lgrngn.opts_init_t()
+#    opts_init.dry_distros = {kappa : distros.lognormal(n_tot, meanr, gstdv)}
 #    opts_init.dt = dt
 
 #    backend = libcl.lgrngn.backend_t.serial
@@ -118,7 +122,15 @@ def calc_RH(RH, Temp, rho_d, th_d, rv):
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	RH[i] = p_v / libcl.common.p_vs(Temp[i])
 
-def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500):
+def main(scheme, 
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
+  aerosol={
+    "meanr":.02e-6, "gstdv":1.4, "n_tot":60e6, 
+    # ammonium sulphate aerosol parameters:
+    "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
+    "kappa":.61    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
+  }
+):
     th_d = np.ones((nx,))* 303.
     #th_d[sl_sg] += 1
     rv = np.ones((nx,))* 5.e-3
@@ -134,7 +146,12 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfr
     RH2 = np.empty((nx,))
     Temp = np.empty((nx,))
     
-    var_adv = [th_d, rv, rc, rr, testowa]
+    var_adv = [th_d, rv, testowa]
+ 
+    if scheme in ["1m", "2m"]:
+           rc = np.zeros((nx,))
+           rr = np.zeros((nx,))
+           var_adv = var_adv + [rc, rr]
 
     if scheme == "2m":
            nc = np.zeros((nx,))
@@ -156,11 +173,14 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfr
 
         #calc_RH(RH1, Temp, rho_d, th_d, rv)
 
-        if scheme == "1m":
-            libcl_1mom(rho_d, th_d, rv, rc, rr, dt)
-
-        if scheme == "2m":
-            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
+        if   scheme == "1m":
+            libcl_1mom(rho_d, th_d, rv, rc, rr,         dt, aerosol)
+        elif scheme == "2m":
+            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol)
+        elif scheme == "sd":
+            libcl_spdr(rho_d, th_d, rv,                 dt, aerosol)
+        else: 
+            assert(False)
 
         calc_RH(RH2, Temp, rho_d, th_d, rv) 
                 
@@ -176,3 +196,4 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfr
 
 main("2m") 
 #main("1m") 
+#main("sd")
