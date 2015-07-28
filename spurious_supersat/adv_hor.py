@@ -160,7 +160,11 @@ def main(scheme,
            var_adv  = var_adv + [nc, nr]
 
     calc_RH(RH2, Temp, rho_d, th_d, rv)
-    plotting({"nc":nc, "rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1.}, figname="plot_init.pdf", time="init") 
+    dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1}
+    if   scheme == "2m":
+        dic_var["nc"] =nc
+
+    plotting(dic_var, figname="plot_init.pdf", time="init") 
     for it in range(nt):
         print "it", it
 
@@ -186,7 +190,9 @@ def main(scheme,
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
-            dic_var = {"nc":nc, "rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1}
+            dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1}
+            if   scheme == "2m":
+                dic_var["nc"] = nc
             plotting(dic_var, figname="plot_"+str(int(it*dt))+"s.pdf", 
             time=str(int(it*dt))+"s" )
             plotting(dic_var, figname="plot_"+str(int(it*dt))+"s_ylim.pdf",
@@ -194,6 +200,6 @@ def main(scheme,
 
 
 
-main("2m") 
+#main("2m") 
 #main("1m") 
-#main("sd")
+main("sd")
