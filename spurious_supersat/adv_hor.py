@@ -26,14 +26,17 @@ def test():
 
 #test()
 
-def plotting(dct):
+def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     nrow = (len(dct)+1)/2
     fig, tpl = plt.subplots(nrows=nrow, ncols=2, figsize=(10,8.5))
     i=0
     for k,v in dct.iteritems():
-      tpl[i%nrow,i/nrow].set_title(k)
+      tpl[i%nrow,i/nrow].set_title(k+", " + time)
+      if k in ylim_dic.keys():
+          tpl[i%nrow,i/nrow].set_ylim(ylim_dic[k])
       tpl[i%nrow,i/nrow].plot(v)
       i+=1
+    plt.savefig(figname)
     plt.show()
 
 
@@ -90,36 +93,40 @@ def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     print "1m rc max, min po mikro", rc.max(), rc.min()
 
 
-def calc_RH(RH, rho_d, th_d, rv):
+def calc_RH(RH, Temp, rho_d, th_d, rv):
     for i in range(len(RH)):
-	T = libcl.common.T(th_d[i], rho_d[i])
-	p = libcl.common.p(rho_d[i], rv[i], T)
-	p_v = rho_d[i] * rv[i] * libcl.common.R_v * T
-	RH[i] = p_v / libcl.common.p_vs(T)
+	Temp[i] = libcl.common.T(th_d[i], rho_d[i])
+	p = libcl.common.p(rho_d[i], rv[i], Temp[i])
+        #pdb.set_trace()
+	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
+	RH[i] = p_v / libcl.common.p_vs(Temp[i])
 
-def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=300, outfreq=100):
-    th_d = np.ones((nx,))* 287.
-    rv = np.ones((nx,))* 2.e-3
+def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500):
+    th_d = np.ones((nx,))* 303.
+    #th_d[sl_sg] += 1
+    rv = np.ones((nx,))* 5.e-3
     rc = np.zeros((nx,))
-    rv[sl_sg] += 1.5e-3
-    #rc[sl_sg] = 1.e-3 
+    rv[sl_sg] += 8.e-3
+    #rc[sl_sg] += 1.e-3 
     rr = np.zeros((nx,))
-    rho_d = np.ones((nx,))
+    rho_d = np.ones((nx,))*.97
     testowa = np.zeros((nx,))
     testowa[sl_sg]= 1.e4
 
     RH1 = np.empty((nx,))
     RH2 = np.empty((nx,))
+    Temp = np.empty((nx,))
     
     var_adv = [th_d, rv, rc, rr, testowa]
 
     if scheme == "2m":
            nc = np.zeros((nx,))
-           #nc[sl_sg] = 1.e8
+           #nc[sl_sg] = 3.e7
            nr = np.zeros((nx,))
            var_adv  = var_adv + [nc, nr]
 
-    plotting({"nc":nc, "rc":rc, "rv":rv, "th":th_d, "RH1":RH1, "RH2":RH2})
+    calc_RH(RH2, Temp, rho_d, th_d, rv)
+    plotting({"nc":nc, "rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1.}, figname="plot_init.pdf", time="init") 
     for it in range(nt):
         print "it", it
 
@@ -130,22 +137,23 @@ def main(scheme, nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=300, outfre
         if scheme == "2m": print "qc min, max po adv", rc.min(), rc.max()
         print "testowa min, max po adv", testowa.min(), testowa.max()
 
-        calc_RH(RH1, rho_d, th_d, rv)
+        #calc_RH(RH1, Temp, rho_d, th_d, rv)
 
         if scheme == "1m":
             libcl_1mom(rho_d, th_d, rv, rc, rr, dt)
 
         if scheme == "2m":
-            #try:
             libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, nx)
-            #except:
-            #    pdb.set_trace()
 
-        calc_RH(RH2, rho_d, th_d, rv) 
+        calc_RH(RH2, Temp, rho_d, th_d, rv) 
                 
         print "testowa po it = ", it
-        if (it+1) % outfreq == 0:
-            plotting({"nc":nc, "rc":rc, "rv":rv, "th":th_d, "RH1":RH1, "RH2":RH2})
+        if it % outfreq == 0 or it in [100]:
+            dic_var = {"nc":nc, "rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1}
+            plotting(dic_var, figname="plot_"+str(int(it*dt))+"s.pdf", 
+            time=str(int(it*dt))+"s" )
+            plotting(dic_var, figname="plot_"+str(int(it*dt))+"s_ylim.pdf",
+                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
 
 
 
