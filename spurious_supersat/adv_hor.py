@@ -92,6 +92,23 @@ def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
     print "1m rc max, min po mikro", rc.max(), rc.min()
 
+def libcl_lgr():
+#    opts_init = libcl.lgrngn.opts_init_t()
+    #TODO jakie dobre wartosci n_tot itp. dlaczego w parcel trzeba bylo definiowac lognormal?
+#    opts_init.dry_distros =  {kappa : distros.lognormal(n_tot, meanr, gstdv)}
+#    opts_init.dt = dt
+
+#    backend = libcl.lgrngn.backend_t.serial
+#    prtcls = libcl.lgrngn.factory(backend, opts_init)
+
+#    opts = libcl.lgrngn.opts_t()
+#    opts.adve = False
+#    opts.sedi = False
+#    opts.cond = True
+#    opts.coal = False
+#    opts.sstp_cond = sstp
+    pass
+
 
 def calc_RH(RH, Temp, rho_d, th_d, rv):
     for i in range(len(RH)):
