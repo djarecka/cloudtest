@@ -149,9 +149,9 @@ def calc_S(S, Temp, rho_d, th_d, rv):
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
 
 def main(scheme, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1000, outfreq=100,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
   aerosol={
-    "meanr":.02e-6, "gstdv":1.4, "n_tot":60e6, 
+    "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
     "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
@@ -201,7 +201,7 @@ def main(scheme,
            dic_var["na"] = na
            dic_var["sd"] = sd
 
-    plotting(dic_var, figname="plot_init.pdf", time="init") 
+    plotting(dic_var, figname=scheme+"plot_init.pdf", time="init") 
     for it in range(nt):
         print "it", it
 
@@ -226,14 +226,14 @@ def main(scheme,
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
-            plotting(dic_var, figname="plot_"+str(int(it*dt))+"s.pdf", 
+            plotting(dic_var, figname=scheme+"plot_"+str(int(it*dt))+"s.pdf", 
               time=str(int(it*dt))+"s" 
             )
-            #plotting(dic_var, figname="plot_"+str(int(it*dt))+"s_ylim.pdf",
-            #         time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
+            plotting(dic_var, figname=scheme+"plot_"+str(int(it*dt))+"s_ylim.pdf",
+                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
 
 
 
-#main("2m") 
+main("2m") 
 #main("1m") 
-main("sd")
+#main("sd")
