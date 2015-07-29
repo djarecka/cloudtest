@@ -40,13 +40,10 @@ def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     plt.show()
 
 
-def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol):
+def libcl_2mom(rho_d, thd, rv, rc, rr, nc, nr, dt, aerosol):
     opts = libcl.blk_2m.opts_t()
-    opts.acti = True
-    opts.cond = True
-    opts.acnv = False
-    opts.accr = False
-    opts.sedi = False
+    opts.acti = opts.cond = True
+    opts.acnv = opts.accr = opts.sedi = False
     distr = [{
       "mean_rd" : aerosol["meanr"], 
       "sdev_rd" : aerosol["gstdv"], 
@@ -55,25 +52,22 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol):
     }]
     opts.dry_distros = distr
 
-    shp = th_d.shape
-    dot_th = np.zeros(shp)
-    dot_rv = np.zeros(shp)
-    dot_rc = np.zeros(shp)
-    dot_nc = np.zeros(shp)
-    dot_rr = np.zeros(shp)
-    dot_nr = np.zeros(shp)
-
+    shp = thd.shape
+    dot_th, dot_rv = np.zeros(shp), np.zeros(shp)
+    dot_rc, dot_nc = np.zeros(shp), np.zeros(shp)
+    dot_rr, dot_nr = np.zeros(shp), np.zeros(shp)
 
     print "qc min, max przed mikro", rc.min(), rc.max()
     print "nc min, max przed mikro", nc.min(), nc.max()
     
     libcl.blk_2m.rhs_cellwise(opts, dot_th, dot_rv, dot_rc, dot_nc, dot_rr, dot_nr,
-                              rho_d, th_d, rv, rc, nc, rr, nr, dt)
+                              rho_d, thd, rv, rc, nc, rr, nr, dt)
     
     print "rc min po mikro" ,(rc + dot_rc * dt).min(), (rc + dot_rc * dt).max()
     print "nc min po mikro" ,(nc + dot_nc * dt).min(), (nc + dot_nc * dt).max()
 
-    th_d += dot_th * dt
+
+    thd  += dot_th * dt
     rv   += dot_rv * dt
     rc   += dot_rc * dt
     nc   += dot_nc * dt
@@ -86,62 +80,62 @@ def libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol):
 
 def libcl_1mom(rho_d, th_d, rv, rc, rr, dt):
     opts = libcl.blk_1m.opts_t()
-    opts.cond = True
-    opts.cevp = True
-    opts.revp = False
-    opts.conv = False
-    opts.accr = False
-    opts.sedi = False
-
+    opts.cond = opts.cevp = True
+    opts.revp = opts.conv = opts.accr = opts.sedi = False
     print "1m rc max, min przed mikro", rc.max(), rc.min()
     libcl.blk_1m.adj_cellwise(opts, rho_d, th_d, rv, rc, rr, dt)
     print "1m rc max, min po mikro", rc.max(), rc.min()
 
-def libcl_spdr_init(rho_d, th_d, rv, C, aerosol):
+
+def libcl_spdr_init(rho_d, th_d, rv, C, dt, aerosol, dx=2): #TODO dx
     opts_init = libcl.lgrngn.opts_init_t()
+    opts_init.dt = dt
+    opts_init.nx = rv.shape[0]
+    opts_init.dx = dx
 
     def lognormal(lnr):
         from math import exp, log, sqrt, pi
         return aerosol["n_tot"] * exp(
-      -(lnr - log(aerosol["mean_r"]))**2 / 2 / log(aerosol["gstdev"])**2
-    ) / log(aerosol["gstdev"]) / sqrt(2*pi);
+      -(lnr - log(aerosol["meanr"]))**2 / 2 / log(aerosol["gstdv"])**2
+    ) / log(aerosol["gstdv"]) / sqrt(2*pi);
 
-    opts_init.dt = dt  
     opts_init.sd_conc_mean = aerosol["sd_conc"]
     opts_init.dry_distros = {aerosol["kappa"]:lognormal}
-    opts_init.coal_switch = False
-    opts_init.sedi_switch = False
-    micro = lgrngn.factory(lgrngn.backend_t.serial, opts_init)
-    micro.init(th_d, rv, rho_d])
+
+    opts_init.coal_switch = opts_init.sedi_switch = False
+
+    micro = libcl.lgrngn.factory(libcl.lgrngn.backend_t.serial, opts_init)
+
+    C_arr = np.ones(rv.shape[0]+1) * C
+    micro.init(th_d, rv, rho_d, C_arr)
     return micro
 
-def libcl_spdr(rho_d, th_d, rv, dt, aerosol, micro):
-    libopts = lgrngn.opts_t()
-    libopts.cond = True
-    libopts.coal = False
-    libopts.adve = True
-    libopts.sedi = False
+def libcl_spdr(rhod, thd, rv, dt, aerosol, micro):
+    libopts = libcl.lgrngn.opts_t()
+    libopts.cond = libopts.adve = True
+    libopts.coal = libopts.sedi = False
 
-    micro.step_sync(libopts, th_d, rv, rhod)
+    print "max w qc przed", rv.max()
+    micro.step_sync(libopts, thd, rv, rhod)
     
     micro.step_async(libopts)
-
+    print "max w qc po", rv.max()
 
 def calc_RH(RH, Temp, rho_d, th_d, rv):
     for i in range(len(RH)):
 	Temp[i] = libcl.common.T(th_d[i], rho_d[i])
 	p = libcl.common.p(rho_d[i], rv[i], Temp[i])
-        #pdb.set_trace()
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	RH[i] = p_v / libcl.common.p_vs(Temp[i])
 
 def main(scheme, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=5, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":60e6, 
     # ammonium sulphate aerosol parameters:
     "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
-    "kappa":.61    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
+    "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
+    "sd_conc":64. #TODO trzeba tu?
   }
 ):
     th_d = np.ones((nx,))* 303.
@@ -155,8 +149,7 @@ def main(scheme,
     testowa = np.zeros((nx,))
     testowa[sl_sg]= 1.e4
 
-    RH1 = np.empty((nx,))
-    RH2 = np.empty((nx,))
+    RH   = np.empty((nx,))
     Temp = np.empty((nx,))
     
     var_adv = [th_d, rv, testowa]
@@ -173,10 +166,10 @@ def main(scheme,
            var_adv  = var_adv + [nc, nr]
 
     if scheme == "sd":
-        micro = libcl_spdr_init(rho_d, th_d, rv, C, aerosol)
+        micro = libcl_spdr_init(rho_d, th_d, rv, crnt, dt, aerosol)
 
-    calc_RH(RH2, Temp, rho_d, th_d, rv)
-    dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1}
+    calc_RH(RH, Temp, rho_d, th_d, rv)
+    dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH-1}
     if   scheme == "2m":
         dic_var["nc"] =nc
 
@@ -191,10 +184,9 @@ def main(scheme,
         if scheme == "2m": print "qc min, max po adv", rc.min(), rc.max()
         print "testowa min, max po adv", testowa.min(), testowa.max()
 
-        #calc_RH(RH1, Temp, rho_d, th_d, rv)
-
+ 
         if   scheme == "1m":
-            libcl_1mom(rho_d, th_d, rv, rc, rr,         dt, aerosol)
+            libcl_1mom(rho_d, th_d, rv, rc, rr,         dt)
         elif scheme == "2m":
             libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol)
         elif scheme == "sd":
@@ -202,17 +194,17 @@ def main(scheme,
         else: 
             assert(False)
 
-        calc_RH(RH2, Temp, rho_d, th_d, rv) 
+        calc_RH(RH, Temp, rho_d, th_d, rv) 
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
-            dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH2-1}
+            dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":RH-1}
             if   scheme == "2m":
                 dic_var["nc"] = nc
             plotting(dic_var, figname="plot_"+str(int(it*dt))+"s.pdf", 
             time=str(int(it*dt))+"s" )
-            plotting(dic_var, figname="plot_"+str(int(it*dt))+"s_ylim.pdf",
-                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
+            #plotting(dic_var, figname="plot_"+str(int(it*dt))+"s_ylim.pdf",
+            #         time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
 
 
 
