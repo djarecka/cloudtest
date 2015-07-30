@@ -144,12 +144,12 @@ def libcl_spdr(rhod, thd, rv, rc, nc, na, sd, dt, aerosol, micro):
 def calc_S(S, Temp, rho_d, th_d, rv):
     for i in range(len(S)):
 	Temp[i] = libcl.common.T(th_d[i], rho_d[i])
-	p = libcl.common.p(rho_d[i], rv[i], Temp[i])
+	p = libcl.common.p(rho_d[i], rv[i], Temp[i]) #TODO needed?
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
 
 def main(scheme, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=251, outfreq=50,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
