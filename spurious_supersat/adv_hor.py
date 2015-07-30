@@ -8,25 +8,11 @@ import libmpdata
 import libcloudphxx as libcl
 import numpy as np
 import math
-#import analytic_blk_1m_pytest as an
-#from constants_pytest import Rd, Rv, cp, p0
 
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
-
-def test():
-    a = np.zeros((10,))
-    a[1]=1
-    print a
-#.5 - l. courant, 3-liczba krokow                                                              
-    libmpdata.mpdata(a, 1., 3);
-#assert a[1] < 1 and a[2] > 0 #SA - po co ten assert?                                          
-    print a
-
-
-#test()
 
 def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     nrow = (len(dct)+1)/2
@@ -148,8 +134,24 @@ def calc_S(S, Temp, rho_d, th_d, rv):
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
 
-def main(scheme, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=251, outfreq=50,
+def rv2absS(del_S, rho_d, th_d, rv):
+    for i in range(len(rho_d)):
+        Temp = libcl.common.T(th_d[i], rho_d[i])
+        pvs =  libcl.common.p_vs(Temp)
+        rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
+        del_S[i] = rv[i] - rvs
+
+def absS2rv(del_S, rho_d, th_d, rv):
+    for i in range(len(rho_d)):
+        Temp = libcl.common.T(th_d[i], rho_d[i])
+        pvs =  libcl.common.p_vs(Temp)
+        rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
+        rv[i] = del_S[i] + rvs
+
+
+
+def main(scheme, apr="trad", 
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=251, outfreq=250,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
@@ -169,9 +171,15 @@ def main(scheme,
     testowa[sl_sg]= 1.e4
 
     S    = np.empty((nx,))
+    del_S = np.empty((nx,))
     Temp = np.empty((nx,))
     
-    var_adv = [th_d, rv, testowa]
+    if apr == "trad":
+        var_adv = [th_d, rv, testowa]
+    elif apr == "S_adv":
+        var_adv = [th_d, del_S, testowa]
+    else:
+        assert(False)
  
     if scheme in ["1m", "2m"]:
            rr = np.zeros((nx,))
@@ -201,17 +209,17 @@ def main(scheme,
            dic_var["na"] = na
            dic_var["sd"] = sd
 
-    plotting(dic_var, figname=scheme+"plot_init.pdf", time="init") 
+    plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_init.pdf", time="init") 
     for it in range(nt):
         print "it", it
-
+        if apr == "S_adv": rv2absS(del_S, rho_d, th_d, rv)
         print "testowa min, max przed adv", testowa.min(), testowa.max()
         if scheme == "2m": print "qc min, max przed adv", rc.min(), rc.max()        
         for var in var_adv:
             libmpdata.mpdata(var, crnt, 1);
         if scheme == "2m": print "qc min, max po adv", rc.min(), rc.max()
         print "testowa min, max po adv", testowa.min(), testowa.max()
-
+        if apr == "S_adv": absS2rv(del_S, rho_d, th_d, rv)
  
         if   scheme == "1m":
             libcl_1mom(rho_d, th_d, rv, rc, rr,         dt)
@@ -226,14 +234,14 @@ def main(scheme,
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
-            plotting(dic_var, figname=scheme+"plot_"+str(int(it*dt))+"s.pdf", 
+            plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
               time=str(int(it*dt))+"s" 
             )
-            plotting(dic_var, figname=scheme+"plot_"+str(int(it*dt))+"s_ylim.pdf",
+            plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
                      time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
 
 
 
-main("2m") 
+#main("2m") 
 #main("1m") 
-#main("sd")
+main("sd", apr="S_adv")
