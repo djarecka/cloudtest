@@ -18,7 +18,7 @@ void mpdata_cpp(
     using real_t = double;
     enum { n_dims = 1 };
     enum { n_eqns = 1 };
-    enum { opts = opts::fct };
+    enum { opts = opts::fct | opts::abs };
   };
   
   using slv_t = solvers::mpdata<ct_params_t>;
