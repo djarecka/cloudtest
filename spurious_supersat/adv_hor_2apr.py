@@ -158,7 +158,7 @@ def absS2rv(del_S, rho_d, th_d, rv):
 
 
 def main(scheme, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=251, outfreq=50,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
@@ -205,18 +205,18 @@ def main(scheme,
            dic_var["na"] = na
            dic_var["sd"] = sd
 
-    plotting(dic_var, figname=scheme+"plot_init.pdf", time="init") 
+    plotting(dic_var, figname=scheme+"2apr_plot_init.pdf", time="init") 
     for it in range(nt):
         print "it", it
         rv2absS(del_S, rho_d, th_d, rv)
-        if it==246: pdb.set_trace()
+        #if it==246: pdb.set_trace()
         print "testowa min, max przed adv", testowa.min(), testowa.max()
         if scheme == "2m": print "qc min, max przed adv", rc.min(), rc.max()        
         for var in var_adv:
             libmpdata.mpdata(var, crnt, 1);
         if scheme == "2m": print "qc min, max po adv", rc.min(), rc.max()
         print "testowa min, max po adv", testowa.min(), testowa.max()
-        if it==246: pdb.set_trace()
+        #if it==246: pdb.set_trace()
         absS2rv(del_S, rho_d, th_d, rv)
 
         #TODO przerobic S na th_D
@@ -232,11 +232,11 @@ def main(scheme,
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
-            plotting(dic_var, figname=scheme+"plot_"+str(int(it*dt))+"s.pdf", 
+            plotting(dic_var, figname=scheme+"2apr_plot_"+str(int(it*dt))+"s.pdf", 
               time=str(int(it*dt))+"s" 
             )
-            #plotting(dic_var, figname=scheme+"plot_"+str(int(it*dt))+"s_ylim.pdf",
-            #         time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
+            plotting(dic_var, figname=scheme+"2apr_plot_"+str(int(it*dt))+"s_ylim.pdf",
+                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.e8, 5.e8], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
 
 
 
