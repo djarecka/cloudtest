@@ -130,22 +130,23 @@ def libcl_spdr(rhod, thd, rv, rc, nc, na, sd, dt, aerosol, micro):
 def calc_S(S, Temp, rho_d, th_d, rv):
     for i in range(len(S)):
 	Temp[i] = libcl.common.T(th_d[i], rho_d[i])
-	p = libcl.common.p(rho_d[i], rv[i], Temp[i]) #TODO needed?
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
 
 def rv2absS(del_S, rho_d, th_d, rv):
     for i in range(len(rho_d)):
         Temp = libcl.common.T(th_d[i], rho_d[i])
+	p = libcl.common.p(rho_d[i], rv[i], Temp) 
         pvs =  libcl.common.p_vs(Temp)
-        rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
+        rvs = libcl.common.eps * pvs / (p - pvs)
         del_S[i] = rv[i] - rvs
 
 def absS2rv(del_S, rho_d, th_d, rv):
     for i in range(len(rho_d)):
         Temp = libcl.common.T(th_d[i], rho_d[i])
+	p = libcl.common.p(rho_d[i], rv[i], Temp) 
         pvs =  libcl.common.p_vs(Temp)
-        rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
+        rvs = libcl.common.eps * pvs / (p - pvs)
         rv[i] = del_S[i] + rvs
 
 def thermo_init(nx, sl_sg, scheme, apr):
@@ -169,24 +170,24 @@ def thermo_init(nx, sl_sg, scheme, apr):
     # to wyliczenia rho zakladam, ze rv jest zero, nie wiem chwilowo jak inaczej
     for ii in range(nx):
         if ii in range(sl_sg.start, sl_sg.stop):
-            th = 303.8
-            RH = 1.0015
+            th_std = 303.8
+            RHr    = 1.0015
             rc = 1.e-3
             nc = 550.e6
         else:
-            th =  302.8
-            RH = 0.5
+            th_std =  302.8
+            RHr    = 0.5
             rc = 0.
             nc = 0
 
-        state["rho_d"][ii] = libcl.common.rhod(press, th, 0)
-        Temp = libcl.common.T(th, state["rho_d"][ii])
-        pvs =  libcl.common.p_vs(Temp)
-        rvs = pvs / (state["rho_d"][ii] * libcl.common.R_v * Temp)
-        state["rv"][ii] = RH * rvs
+        Temp = th_std / (libcl.common.p_1000/press)**(libcl.common.R_d/libcl.common.c_pd)
+        p_vs = libcl.common.p_vs(Temp)
+        rvs = libcl.common.eps * p_vs / (press - p_vs)
+        state["rv"][ii] = RHr * rvs
+        state["th_d"][ii] = libcl.common.th_std2dry(th_std, state["rv"][ii])
+        state["rho_d"][ii] = libcl.common.rhod(press, th_std, state["rv"][ii])
         state["rc"][ii] = rc
         state["nc"][ii] = nc
-        state["th_d"][ii] = libcl.common.th_std2dry(th, state["rv"][ii]) #nie do konca konsystentnie
 
     if apr == "trad":
         var_adv = ["th_d", "rv", "testowa"]
