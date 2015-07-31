@@ -133,6 +133,13 @@ def calc_S(S, Temp, rho_d, th_d, rv):
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
 
+
+def calc_rhod(rho_d, press, th_d, rv):
+    for i in range(len(rho_d)):
+        p_d = press * (1 - rv[i]/(rv[i] + libcl.common.eps))
+        Temp = th_d[i] * (p_d/libcl.common.p_1000)**(libcl.common.R_d / libcl.common.c_pd)
+        rho_d[i] = p_d / (libcl.common.R_d * Temp)
+
 def rv2absS(del_S, rho_d, th_d, rv):
     for i in range(len(rho_d)):
         Temp = libcl.common.T(th_d[i], rho_d[i])
@@ -149,7 +156,7 @@ def absS2rv(del_S, rho_d, th_d, rv):
         rvs = libcl.common.eps * pvs / (p - pvs)
         rv[i] = del_S[i] + rvs
 
-def thermo_init(nx, sl_sg, scheme, apr):
+def thermo_init(nx, sl_sg, scheme, apr, press):
     state = {}
     state["th_d"] = np.empty((nx,))
     state["rho_d"] = np.empty((nx,))
@@ -163,9 +170,6 @@ def thermo_init(nx, sl_sg, scheme, apr):
     state["del_S"] = np.empty((nx,))
     state["Temp"]  = np.empty((nx,))
     state["nc"] = np.zeros((nx,))
-
-    # od Wojtka 
-    press = 0.8e5
 
     # to wyliczenia rho zakladam, ze rv jest zero, nie wiem chwilowo jak inaczej
     for ii in range(nx):
@@ -185,7 +189,6 @@ def thermo_init(nx, sl_sg, scheme, apr):
         rvs = libcl.common.eps * p_vs / (press - p_vs)
         state["rv"][ii] = RHr * rvs
         state["th_d"][ii] = libcl.common.th_std2dry(th_std, state["rv"][ii])
-        state["rho_d"][ii] = libcl.common.rhod(press, th_std, state["rv"][ii])
         state["rc"][ii] = rc
         state["nc"][ii] = nc
 
@@ -222,14 +225,14 @@ def main(scheme, apr="trad",
     "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
     "sd_conc":512. #TODO trzeba tu?
-  }
+  },
+  press = 0.8e5 # od Wojtka 
 ):
-
-    state, var_adv = thermo_init(nx, sl_sg, scheme, apr)
+    state, var_adv = thermo_init(nx, sl_sg, scheme, apr, press)
+    calc_rhod(state["rho_d"], press, state["th_d"], state["rv"])
     if scheme == "sd":
         micro = libcl_spdr_init(state["rho_d"], state["th_d"], state["rv"], crnt, dt, aerosol)
         
-
     calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"])
 
     if scheme == "1m":
@@ -244,6 +247,9 @@ def main(scheme, apr="trad",
 
     for it in range(nt):
         print "it", it
+
+        calc_rhod(state["rho_d"], press, state["th_d"], state["rv"])
+
         if apr == "S_adv": rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
         print "testowa min, max przed adv", state["testowa"].min(), state["testowa"].max()
         if scheme == "2m": print "qc min, max przed adv", state["rc"].min(), state["rc"].max()        
@@ -278,8 +284,8 @@ def main(scheme, apr="trad",
 
 
 if __name__ == '__main__':
-    main("2m") 
+    #main("2m") 
     #main("1m")
-    #main("sd")
+    main("sd")
     #main("sd", apr="S_adv")
     #main("2m", apr="S_adv")
