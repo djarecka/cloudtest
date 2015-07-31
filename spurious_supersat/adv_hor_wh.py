@@ -127,33 +127,31 @@ def libcl_spdr(rhod, thd, rv, rc, nc, na, sd, dt, aerosol, micro):
     rho_H2O = 1e3
     rc[:] = 4./3 * math.pi * rho_H2O * np.frombuffer(micro.outbuf())
 
-def calc_S(S, Temp, rho_d, th_d, rv):
-    for i in range(len(S)):
-	Temp[i] = libcl.common.T(th_d[i], rho_d[i])
+def diag(
+  # output
+  rho_d, Temp, S, 
+  # param
+  press, 
+  # input
+  th_d, rv
+):
+    for i in range(len(rho_d)):
+        p_d = press * (1 - rv[i]/(rv[i] + libcl.common.eps))
+        Temp[i] = th_d[i] * (p_d/libcl.common.p_1000)**(libcl.common.R_d / libcl.common.c_pd)
+        rho_d[i] = p_d / (libcl.common.R_d * Temp[i])
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
 
-
-def calc_rhod(rho_d, press, th_d, rv):
-    for i in range(len(rho_d)):
-        p_d = press * (1 - rv[i]/(rv[i] + libcl.common.eps))
-        Temp = th_d[i] * (p_d/libcl.common.p_1000)**(libcl.common.R_d / libcl.common.c_pd)
-        rho_d[i] = p_d / (libcl.common.R_d * Temp)
-
-def rv2absS(del_S, rho_d, th_d, rv):
-    for i in range(len(rho_d)):
-        Temp = libcl.common.T(th_d[i], rho_d[i])
-	p = libcl.common.p(rho_d[i], rv[i], Temp) 
-        pvs =  libcl.common.p_vs(Temp)
-        rvs = libcl.common.eps * pvs / (p - pvs)
+def rv2absS(del_S, rv, Temp, press):
+    for i in range(len(rv)):
+        pvs =  libcl.common.p_vs(Temp[i])
+        rvs = libcl.common.eps * pvs / (press - pvs)
         del_S[i] = rv[i] - rvs
 
-def absS2rv(del_S, rho_d, th_d, rv):
-    for i in range(len(rho_d)):
-        Temp = libcl.common.T(th_d[i], rho_d[i])
-	p = libcl.common.p(rho_d[i], rv[i], Temp) 
-        pvs =  libcl.common.p_vs(Temp)
-        rvs = libcl.common.eps * pvs / (p - pvs)
+def absS2rv(del_S, rv, Temp, press):
+    for i in range(len(rv)):
+        pvs =  libcl.common.p_vs(Temp[i])
+        rvs = libcl.common.eps * pvs / (press - pvs)
         rv[i] = del_S[i] + rvs
 
 def thermo_init(nx, sl_sg, scheme, apr, press):
@@ -229,11 +227,11 @@ def main(scheme, apr="trad",
   press = 0.8e5 # od Wojtka 
 ):
     state, var_adv = thermo_init(nx, sl_sg, scheme, apr, press)
-    calc_rhod(state["rho_d"], press, state["th_d"], state["rv"])
+
+    diag(state["rho_d"], state["Temp"], state["S"], press, state["th_d"], state["rv"])
+
     if scheme == "sd":
         micro = libcl_spdr_init(state["rho_d"], state["th_d"], state["rv"], crnt, dt, aerosol)
-        
-    calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"])
 
     if scheme == "1m":
         dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S"))
@@ -248,16 +246,24 @@ def main(scheme, apr="trad",
     for it in range(nt):
         print "it", it
 
-        calc_rhod(state["rho_d"], press, state["th_d"], state["rv"])
+        if apr == "S_adv": 
+            diag(state["rho_d"], state["Temp"], state["S"], press, state["th_d"], state["rv"])
+            rv2absS(state["del_S"], state["rv"], state["Temp"], press)
 
-        if apr == "S_adv": rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
         print "testowa min, max przed adv", state["testowa"].min(), state["testowa"].max()
         if scheme == "2m": print "qc min, max przed adv", state["rc"].min(), state["rc"].max()        
+
         for var in var_adv:
             libmpdata.mpdata(state[var], crnt, 1);
+
+        diag(state["rho_d"], state["Temp"], state["S"], press, state["th_d"], state["rv"])
+
         if scheme == "2m": print "qc min, max po adv", state["rc"].min(), state["rc"].max()
         print "testowa min, max po adv", state["testowa"].min(), state["testowa"].max()
-        if apr == "S_adv": absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
+
+        if apr == "S_adv": 
+            absS2rv(state["del_S"], state["rv"], state["Temp"], press)
+            diag(state["rho_d"], state["Temp"], state["S"], press, state["th_d"], state["rv"])
  
         if   scheme == "1m":
             libcl_1mom(state["rho_d"], state["th_d"], state["rv"], state["rc"], state["rr"], 
@@ -272,10 +278,11 @@ def main(scheme, apr="trad",
             assert(False)
 
         #pdb.set_trace()
-        calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
+	    diag(state["rho_d"], state["Temp"], state["S"], press, state["th_d"], state["rv"])
+
             plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
               time=str(int(it*dt))+"s" 
             )
