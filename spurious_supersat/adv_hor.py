@@ -148,6 +148,47 @@ def absS2rv(del_S, rho_d, th_d, rv):
         rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
         rv[i] = del_S[i] + rvs
 
+def thermo_init(nx, sl_sg, scheme, apr):
+    state = {}
+    state["th_d"] = np.ones((nx,))* 303.
+    #state["th_d"][sl_sg] += 1                                                              
+    state["rv"] = np.ones((nx,))* 5.e-3
+    state["rc"] = np.zeros((nx,))
+    state["rv"][sl_sg] += 8.e-3
+    #state["rc"][sl_sg] += 1.e-3                                           
+    state["rho_d"] = np.ones((nx,))*.97
+    state["testowa"] = np.zeros((nx,))
+    state["testowa"][sl_sg]= 1.e4
+
+    state["S"]    = np.empty((nx,))
+    state["del_S"] = np.empty((nx,))
+    state["Temp"] = np.empty((nx,))
+
+    if apr == "trad":
+        var_adv = ["th_d", "rv", "testowa"]
+    elif apr == "S_adv":
+        var_adv = ["th_d", "del_S", "testowa"]
+    else:
+        assert(False)
+
+    if scheme in ["1m", "2m"]:
+           state["rr"] = np.zeros((nx,))
+           var_adv = var_adv + ["rc", "rr"]
+
+    if scheme == "2m":
+           state["nc"] = np.zeros((nx,))
+           #state["nc"][sl_sg] = 3.e7                                            
+           state["nr"] = np.zeros((nx,))
+           var_adv  = var_adv + ["nc", "nr"]
+
+    if scheme == "sd":
+           state["na"] = np.zeros((nx,))
+           state["nc"] = np.zeros((nx,))
+           state["rc"] = np.zeros((nx,))
+           state["sd"] = np.zeros((nx,))
+ 
+    return state, var_adv
+
 
 
 def main(scheme, apr="trad", 
@@ -160,77 +201,49 @@ def main(scheme, apr="trad",
     "sd_conc":512. #TODO trzeba tu?
   }
 ):
-    th_d = np.ones((nx,))* 303.
-    #th_d[sl_sg] += 1
-    rv = np.ones((nx,))* 5.e-3
-    rc = np.zeros((nx,))
-    rv[sl_sg] += 8.e-3
-    #rc[sl_sg] += 1.e-3 
-    rho_d = np.ones((nx,))*.97
-    testowa = np.zeros((nx,))
-    testowa[sl_sg]= 1.e4
 
-    S    = np.empty((nx,))
-    del_S = np.empty((nx,))
-    Temp = np.empty((nx,))
-    
-    if apr == "trad":
-        var_adv = [th_d, rv, testowa]
-    elif apr == "S_adv":
-        var_adv = [th_d, del_S, testowa]
-    else:
-        assert(False)
- 
-    if scheme in ["1m", "2m"]:
-           rr = np.zeros((nx,))
-           var_adv = var_adv + [rc, rr]
-
-    if scheme == "2m":
-           nc = np.zeros((nx,))
-           #nc[sl_sg] = 3.e7
-           nr = np.zeros((nx,))
-           var_adv  = var_adv + [nc, nr]
-
+    state, var_adv = thermo_init(nx, sl_sg, scheme, apr)
     if scheme == "sd":
-           na = np.zeros((nx,))
-           nc = np.zeros((nx,))
-           rc = np.zeros((nx,))
-           sd = np.zeros((nx,))
-           micro = libcl_spdr_init(rho_d, th_d, rv, crnt, dt, aerosol)
+        micro = libcl_spdr_init(state["rho_d"], state["th_d"], state["rv"], crnt, dt, aerosol)
         
 
-    calc_S(S, Temp, rho_d, th_d, rv)
-    dic_var = {"rc":rc, "rv":rv, "th":th_d, "Temp":Temp, "S":S}
+    calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"])
 
-    if scheme in ["2m","sd"]:
-           dic_var["nc"] = nc
-
-    if scheme == "sd":
-           dic_var["na"] = na
-           dic_var["sd"] = sd
+    if scheme == "1m":
+        dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S"))
+    elif scheme == "2m":
+        dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
+    elif scheme == "sd":
+        dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc", "na", "sd"))
+    else:
+        assert(False)
 
     plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_init.pdf", time="init") 
     for it in range(nt):
         print "it", it
-        if apr == "S_adv": rv2absS(del_S, rho_d, th_d, rv)
-        print "testowa min, max przed adv", testowa.min(), testowa.max()
-        if scheme == "2m": print "qc min, max przed adv", rc.min(), rc.max()        
+        if apr == "S_adv": rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
+        print "testowa min, max przed adv", state["testowa"].min(), state["testowa"].max()
+        if scheme == "2m": print "qc min, max przed adv", state["rc"].min(), state["rc"].max()        
         for var in var_adv:
-            libmpdata.mpdata(var, crnt, 1);
-        if scheme == "2m": print "qc min, max po adv", rc.min(), rc.max()
-        print "testowa min, max po adv", testowa.min(), testowa.max()
-        if apr == "S_adv": absS2rv(del_S, rho_d, th_d, rv)
+            libmpdata.mpdata(state[var], crnt, 1);
+        if scheme == "2m": print "qc min, max po adv", state["rc"].min(), state["rc"].max()
+        print "testowa min, max po adv", state["testowa"].min(), state["testowa"].max()
+        if apr == "S_adv": absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
  
         if   scheme == "1m":
-            libcl_1mom(rho_d, th_d, rv, rc, rr,         dt)
+            libcl_1mom(state["rho_d"], state["th_d"], state["rv"], state["rc"], state["rr"], 
+                       dt)
         elif scheme == "2m":
-            libcl_2mom(rho_d, th_d, rv, rc, rr, nc, nr, dt, aerosol)
+            libcl_2mom(state["rho_d"], state["th_d"], state["rv"], state["rc"], state["rr"], 
+                       state["nc"], state["nr"], dt, aerosol)
         elif scheme == "sd":
-            libcl_spdr(rho_d, th_d, rv, rc, nc, na, sd, dt, aerosol, micro)
+            libcl_spdr(state["rho_d"], state["th_d"], state["rv"], state["rc"], 
+                       state["nc"], state["na"], state["sd"], dt, aerosol, micro)
         else: 
             assert(False)
 
-        calc_S(S, Temp, rho_d, th_d, rv) 
+        #pdb.set_trace()
+        calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
@@ -241,7 +254,9 @@ def main(scheme, apr="trad",
                      time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
 
 
-
-#main("2m") 
-#main("1m") 
-main("sd", apr="S_adv")
+if __name__ == '__main__':
+    #main("2m") 
+    #main("1m")
+    #main("sd")
+    main("sd", apr="S_adv")
+    #main("2m", apr="S_adv")
