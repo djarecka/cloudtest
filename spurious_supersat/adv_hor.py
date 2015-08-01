@@ -14,6 +14,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
+import init_WH as wh
+
 def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     nrow = (len(dct)+1)/2
     fig, tpl = plt.subplots(nrows=nrow, ncols=2, figsize=(10,8.5))
@@ -133,6 +135,7 @@ def calc_S(S, Temp, rho_d, th_d, rv):
 	p = libcl.common.p(rho_d[i], rv[i], Temp[i]) #TODO needed?
 	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
+        #pdb.set_trace()
 
 def rv2absS(del_S, rho_d, th_d, rv):
     for i in range(len(rho_d)):
@@ -147,6 +150,7 @@ def absS2rv(del_S, rho_d, th_d, rv):
         pvs =  libcl.common.p_vs(Temp)
         rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
         rv[i] = del_S[i] + rvs
+
 
 def thermo_init(nx, sl_sg, scheme, apr):
     state = {}
@@ -191,8 +195,8 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 
-def main(scheme, apr="trad", 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=251, outfreq=250,
+def main(scheme, apr="trad", setup="rhconst", 
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
@@ -202,11 +206,15 @@ def main(scheme, apr="trad",
   }
 ):
 
-    state, var_adv = thermo_init(nx, sl_sg, scheme, apr)
+    if setup == "rhconst":
+        state, var_adv = thermo_init(nx, sl_sg, scheme, apr)
+    elif setup =="wh":
+        state, var_adv = wh.thermo_init(nx, sl_sg, scheme, apr)
+    
     if scheme == "sd":
         micro = libcl_spdr_init(state["rho_d"], state["th_d"], state["rv"], crnt, dt, aerosol)
         
-
+    pdb.set_trace()
     calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"])
 
     if scheme == "1m":
@@ -228,8 +236,14 @@ def main(scheme, apr="trad",
             libmpdata.mpdata(state[var], crnt, 1);
         if scheme == "2m": print "qc min, max po adv", state["rc"].min(), state["rc"].max()
         print "testowa min, max po adv", state["testowa"].min(), state["testowa"].max()
+        if setup == "wh":
+            for ii in range(nx): wh.rho_adjust(state, nx)
+
+
         if apr == "S_adv": absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
  
+        
+
         if   scheme == "1m":
             libcl_1mom(state["rho_d"], state["th_d"], state["rv"], state["rc"], state["rr"], 
                        dt)
@@ -258,5 +272,5 @@ if __name__ == '__main__':
     #main("2m") 
     #main("1m")
     #main("sd")
-    main("sd", apr="S_adv")
-    #main("2m", apr="S_adv")
+    #main("sd", apr="S_adv", setup="wh")
+    main("2m", apr="S_adv", setup="wh")
