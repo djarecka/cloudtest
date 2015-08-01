@@ -154,6 +154,50 @@ def absS2rv(del_S, rv, Temp, press):
         rvs = libcl.common.eps * pvs / (press - pvs)
         rv[i] = del_S[i] + rvs
 
+def thermo_init_old(nx, sl_sg, scheme, apr):
+    state = {}
+    state["th_d"] = np.ones((nx,))* 303.
+    #state["th_d"][sl_sg] += 1
+    state["rv"] = np.ones((nx,))* 5.e-3
+    state["rc"] = np.zeros((nx,))
+    state["rv"][sl_sg] += 8.e-3
+    #state["rc"][sl_sg] += 1.e-3
+    state["rho_d"] = np.ones((nx,))*.97
+    state["testowa"] = np.zeros((nx,))
+    state["testowa"][sl_sg]= 1.e4
+
+    state["S"]    = np.empty((nx,))
+    state["del_S"] = np.empty((nx,))
+    state["Temp"] = np.empty((nx,))
+
+    if apr == "trad":
+        var_adv = ["th_d", "rv", "testowa"]
+    elif apr == "S_adv":
+        var_adv = ["th_d", "del_S", "testowa"]
+    else:
+        assert(False)
+
+    if scheme in ["1m", "2m"]:
+           state["rr"] = np.zeros((nx,))
+           var_adv = var_adv + ["rc", "rr"]
+
+    if scheme == "2m":
+           state["nc"] = np.zeros((nx,))
+           #state["nc"][sl_sg] = 3.e7
+           state["nr"] = np.zeros((nx,))
+           var_adv  = var_adv + ["nc", "nr"]
+
+    if scheme == "sd":
+           state["na"] = np.zeros((nx,))
+           state["nc"] = np.zeros((nx,))
+           state["rc"] = np.zeros((nx,))
+           state["sd"] = np.zeros((nx,))
+
+    return state, var_adv
+
+
+
+
 def thermo_init(nx, sl_sg, scheme, apr, press):
     state = {}
     state["th_d"] = np.empty((nx,))
@@ -216,7 +260,7 @@ def thermo_init(nx, sl_sg, scheme, apr, press):
 
 
 def main(scheme, apr="trad", 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=251, outfreq=250,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
@@ -224,10 +268,12 @@ def main(scheme, apr="trad",
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
     "sd_conc":512. #TODO trzeba tu?
   },
-  press = 0.8e5 # od Wojtka 
+  press = 0.8e5, # od Wojtka
+  ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} 
 ):
-    state, var_adv = thermo_init(nx, sl_sg, scheme, apr, press)
+#    state, var_adv = thermo_init(nx, sl_sg, scheme, apr, press)
 
+    state, var_adv = thermo_init_old(nx, sl_sg, scheme, apr)
     diag(state["rho_d"], state["Temp"], state["S"], press, state["th_d"], state["rv"])
 
     if scheme == "sd":
@@ -287,12 +333,13 @@ def main(scheme, apr="trad",
               time=str(int(it*dt))+"s" 
             )
             plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
-                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
+                     time=str(int(it*dt))+"s", ylim_dic=ylim_dic)
 
 
 if __name__ == '__main__':
-    #main("2m") 
+    ylim_dic_2m={"S":[-0.005, 0.015], "nc":[5.4e8, 5.6e8], "rv":[0.0109,0.0111], "rc":[0.00098, 0.00104]}
+    #main("2m")#,  ylim_dic=ylim_dic_2m)
     #main("1m")
-    main("sd")
+    #main("sd")
     #main("sd", apr="S_adv")
-    #main("2m", apr="S_adv")
+    main("2m", apr="S_adv")#,ylim_dic=ylim_dic_2m)
