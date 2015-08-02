@@ -203,7 +203,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 
-def main(scheme, apr="trad", setup="rhconst", pl_flag = False, 
+def main(scheme, apr="trad", setup="rhoconst", pl_flag = False, 
   nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=501, outfreq=500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
@@ -214,11 +214,13 @@ def main(scheme, apr="trad", setup="rhconst", pl_flag = False,
   }
 ):
 
-    if setup == "rhconst":
+    if setup == "rhoconst":
         state, var_adv = thermo_init(nx, sl_sg, scheme, apr)
     elif setup =="wh":
         state, var_adv = wh.thermo_init(nx, sl_sg, scheme, apr)
-    
+    else:
+        assert(False)
+
     if scheme == "sd":
         micro = libcl_spdr_init(state["rho_d"], state["th_d"], state["rv"], crnt, dt, aerosol)
         
@@ -281,9 +283,9 @@ def main(scheme, apr="trad", setup="rhconst", pl_flag = False,
 
 if __name__ == '__main__':
     pl_flag = True
-    #main("2m") 
+    main("2m") 
     #main("1m")
     #main("sd")
     #main("sd", apr="S_adv", setup="wh")
     #main("2m", apr="S_adv")
-    main("sd", apr="S_adv")
+    #main("sd", apr="S_adv")
