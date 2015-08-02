@@ -8,6 +8,7 @@ import libmpdata
 import libcloudphxx as libcl
 import numpy as np
 import math
+import json 
 
 import matplotlib
 #matplotlib.use('Agg')
@@ -28,6 +29,13 @@ def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
       i+=1
     plt.savefig(figname)
     plt.show()
+
+def saving_state(dic, filename):
+    dic_list = {}
+    for key, value in dic.iteritems():
+        dic_list[key] = value.tolist()
+    f_w = open(filename, 'w')
+    json.dump(dic_list, f_w)
 
 
 def libcl_2mom(rho_d, thd, rv, rc, rr, nc, nr, dt, aerosol):
@@ -195,8 +203,8 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 
-def main(scheme, apr="trad", setup="rhconst", 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
+def main(scheme, apr="trad", setup="rhconst", pl_flag = False, 
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=501, outfreq=500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
@@ -214,7 +222,7 @@ def main(scheme, apr="trad", setup="rhconst",
     if scheme == "sd":
         micro = libcl_spdr_init(state["rho_d"], state["th_d"], state["rv"], crnt, dt, aerosol)
         
-    pdb.set_trace()
+    #pdb.set_trace()
     calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"])
 
     if scheme == "1m":
@@ -225,8 +233,9 @@ def main(scheme, apr="trad", setup="rhconst",
         dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc", "na", "sd"))
     else:
         assert(False)
-
-    plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_init.pdf", time="init") 
+    
+    if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_init.pdf", time="init") 
+    saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_init.txt")
     for it in range(nt):
         print "it", it
         if apr == "S_adv": rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
@@ -261,16 +270,20 @@ def main(scheme, apr="trad", setup="rhconst",
                 
         print "testowa po it = ", it
         if it % outfreq == 0 or it in [100]:
-            plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
+            if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
               time=str(int(it*dt))+"s" 
             )
-            plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
+            if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
                      time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
+            if it == nt-1:
+                saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
 
 
 if __name__ == '__main__':
+    pl_flag = True
     #main("2m") 
     #main("1m")
     #main("sd")
     #main("sd", apr="S_adv", setup="wh")
-    main("2m", apr="S_adv", setup="wh")
+    #main("2m", apr="S_adv")
+    main("sd", apr="S_adv")
