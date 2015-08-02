@@ -8,6 +8,7 @@ import libmpdata
 import libcloudphxx as libcl
 import numpy as np
 import math
+import json
 
 import matplotlib
 #matplotlib.use('Agg')
@@ -26,6 +27,13 @@ def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
       i+=1
     plt.savefig(figname)
     plt.show()
+
+def saving_state(dic, filename):
+    dic_list = {}
+    for key, value in dic.iteritems():
+        dic_list[key] = value.tolist()
+    f_w = open(filename, 'w')
+    json.dump(dic_list, f_w)
 
 
 def libcl_2mom(rho_d, thd, rv, rc, rr, nc, nr, dt, aerosol):
@@ -259,7 +267,7 @@ def thermo_init(nx, sl_sg, scheme, apr, press):
 
 
 
-def main(scheme, apr="trad", 
+def main(scheme, apr="trad", setup="wh", 
   nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
@@ -271,9 +279,13 @@ def main(scheme, apr="trad",
   press = 0.8e5, # od Wojtka
   ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} 
 ):
-#    state, var_adv = thermo_init(nx, sl_sg, scheme, apr, press)
+    if setup=="wh": 
+        state, var_adv = thermo_init(nx, sl_sg, scheme, apr, press)
+    elif setup=="rhoconst": 
+        state, var_adv = thermo_init_old(nx, sl_sg, scheme, apr)
+    else: 
+        assert(False)
 
-    state, var_adv = thermo_init_old(nx, sl_sg, scheme, apr)
     diag(state["rho_d"], state["Temp"], state["S"], press, state["th_d"], state["rv"])
 
     if scheme == "sd":
@@ -288,7 +300,7 @@ def main(scheme, apr="trad",
     else:
         assert(False)
     plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_init.pdf", time="init") 
-
+    saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_init.txt")
     for it in range(nt):
         print "it", it
 
@@ -334,6 +346,8 @@ def main(scheme, apr="trad",
             )
             plotting(dic_var, figname=scheme+"_"+apr+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
                      time=str(int(it*dt))+"s", ylim_dic=ylim_dic)
+            if it == nt-1:
+                saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
 
 
 if __name__ == '__main__':
