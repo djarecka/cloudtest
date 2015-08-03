@@ -159,6 +159,25 @@ def absS2rv(del_S, rho_d, th_d, rv):
         rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
         rv[i] = del_S[i] + rvs
 
+def micro_adj(rv, rc, th_d, rho_d, del_S): #TODO musze zrobic lepiej
+    L = 2.5e6 #TODO
+    #pdb.set_trace()
+    for i in range(len(rho_d)):
+        Temp = libcl.common.T(th_d[i], rho_d[i])
+        p = libcl.common.p(rho_d[i], rv[i], Temp)
+        pvs =  libcl.common.p_vs(Temp)
+        rvs = pvs / (rho_d[i] * libcl.common.R_v * Temp)
+        drs_dT = L * rvs / (rv[i] * Temp**2)  
+        Gamma = 1  + drs_dT * L / libcl.common.c_pd
+        epsilon = (rv[i] - rvs - del_S[i]) / Gamma
+        #if i == 60:
+        #    pdb.set_trace()
+        rv[i] -= epsilon
+        rc[i] += epsilon
+        th = libcl.common.th_dry2std(th_d[i], rv[i])
+        th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * epsilon
+        th_d[i] = libcl.common.th_std2dry(th, rv[i])
+    #pdb.set_trace()
 
 def thermo_init(nx, sl_sg, scheme, apr):
     state = {}
@@ -178,7 +197,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
     if apr == "trad":
         var_adv = ["th_d", "rv", "testowa"]
-    elif apr == "S_adv":
+    elif apr in ["S_adv", "S_adv_adj"]:
         var_adv = ["th_d", "del_S", "testowa"]
     else:
         assert(False)
@@ -204,7 +223,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 def main(scheme, apr="trad", setup="rhoconst", pl_flag = False, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=501, outfreq=500,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
     # ammonium sulphate aerosol parameters:
@@ -240,7 +259,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
     saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_init.txt")
     for it in range(nt):
         print "it", it
-        if apr == "S_adv": rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
+        if apr in ["S_adv", "S_adv_adj"]: rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
         print "testowa min, max przed adv", state["testowa"].min(), state["testowa"].max()
         if scheme == "2m": print "qc min, max przed adv", state["rc"].min(), state["rc"].max()        
         for var in var_adv:
@@ -251,9 +270,8 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
             for ii in range(nx): wh.rho_adjust(state, nx)
 
 
-        if apr == "S_adv": absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
+        if apr in ["S_adv", "S_adv_adj"]: absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
  
-        
 
         if   scheme == "1m":
             libcl_1mom(state["rho_d"], state["th_d"], state["rv"], state["rc"], state["rr"], 
@@ -261,12 +279,16 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
         elif scheme == "2m":
             libcl_2mom(state["rho_d"], state["th_d"], state["rv"], state["rc"], state["rr"], 
                        state["nc"], state["nr"], dt, aerosol)
+            #pdb.set_trace()
         elif scheme == "sd":
             libcl_spdr(state["rho_d"], state["th_d"], state["rv"], state["rc"], 
                        state["nc"], state["na"], state["sd"], dt, aerosol, micro)
         else: 
             assert(False)
 
+
+
+        if apr == "S_adv_adj": micro_adj(state["rv"], state["rc"], state["th_d"], state["rho_d"], state["del_S"])
         #pdb.set_trace()
         calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
                 
@@ -276,16 +298,16 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
               time=str(int(it*dt))+"s" 
             )
             if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
-                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.86e7, 4.92e7], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
+                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.45e8, 4.55e8], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
             if it == nt-1:
                 saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
 
 
 if __name__ == '__main__':
-    pl_flag = True
-    main("2m") 
+    main("2m", pl_flag=True) 
     #main("1m")
     #main("sd")
     #main("sd", apr="S_adv", setup="wh")
-    #main("2m", apr="S_adv")
+    main("2m", apr="S_adv", pl_flag=True)
     #main("sd", apr="S_adv")
+    main("2m", apr="S_adv_adj", pl_flag=True)
