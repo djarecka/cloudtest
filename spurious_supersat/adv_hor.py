@@ -286,9 +286,9 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
             assert(False)
 
 
-
         if apr == "S_adv_adj": micro_adj(state["rv"], state["rc"], state["th_d"], state["rho_d"], state["del_S"])
         #pdb.set_trace()
+        if setup == "wh": wh.rho_adjust(state, nx)
         calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
                 
         print "testowa po it = ", it
