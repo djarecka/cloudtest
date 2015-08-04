@@ -223,9 +223,9 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 def main(scheme, apr="trad", setup="rhoconst", pl_flag = False, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=501, outfreq=500,
   aerosol={
-    "meanr":.02e-6, "gstdv":1.4, "n_tot":550e6, 
+    "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6, 
     # ammonium sulphate aerosol parameters:
     "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
@@ -298,17 +298,18 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
               time=str(int(it*dt))+"s" 
             )
             if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
-                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.45e8, 4.55e8], "rv":[0.0119,0.0121], "rc":[0.00095, 0.0011]} )
+                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[5.e8, 6.e8], "rv":[0.0108,0.0112], "rc":[0.00095, 0.0011]} )
             if it == nt-1:
                 saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
 
 
 if __name__ == '__main__':
-    #main("2m", pl_flag=True) 
+    main("2m", pl_flag=True) 
+    #main("2m", pl_flag=True, setup="wh")
     #main("1m")
     #main("sd",pl_flag=True)
-    #main("sd", apr="S_adv", setup="wh")
+    #main("2m", apr="S_adv", setup="wh", pl_flag=True)
     #main("2m", apr="S_adv", pl_flag=True)
-    main("sd", apr="S_adv", pl_flag=True)
+    #main("sd", apr="S_adv", pl_flag=True)
     #main("2m", apr="S_adv_adj", pl_flag=True)
-    main("sd", apr="S_adv_adj", pl_flag=True)
+    #main("sd", apr="S_adv_adj", pl_flag=True)
