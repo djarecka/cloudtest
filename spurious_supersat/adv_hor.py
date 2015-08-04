@@ -98,7 +98,7 @@ def libcl_spdr_init(rho_d, th_d, rv, C, dt, aerosol, dx=2): #TODO dx
       -(lnr - log(aerosol["meanr"]))**2 / 2 / log(aerosol["gstdv"])**2
     ) / log(aerosol["gstdv"]) / sqrt(2*pi);
 
-    opts_init.sd_conc_mean = aerosol["sd_conc"]
+    opts_init.sd_conc = aerosol["sd_conc"]
     opts_init.dry_distros = {aerosol["kappa"]:lognormal}
 
     opts_init.coal_switch = opts_init.sedi_switch = False
@@ -141,11 +141,11 @@ def calc_S(S, Temp, rho_d, th_d, rv):
     for i in range(len(S)):
 	Temp[i] = libcl.common.T(th_d[i], rho_d[i])
 	p = libcl.common.p(rho_d[i], rv[i], Temp[i]) #TODO needed?
-	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i]
+	p_v = rho_d[i] * rv[i] * libcl.common.R_v * Temp[i] #TODO pomyslec o rho_D
 	S[i] = p_v / libcl.common.p_vs(Temp[i]) - 1
         #pdb.set_trace()
 
-def rv2absS(del_S, rho_d, th_d, rv):
+def rv2absS(del_S, rho_d, th_d, rv): #czy trzeba updatowac roho_d
     for i in range(len(rho_d)):
         Temp = libcl.common.T(th_d[i], rho_d[i])
         pvs =  libcl.common.p_vs(Temp)
@@ -229,7 +229,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
     # ammonium sulphate aerosol parameters:
     "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
-    "sd_conc":512. #TODO trzeba tu?
+    "sd_conc":512 #TODO trzeba tu?
   }
 ):
 
@@ -298,16 +298,17 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
               time=str(int(it*dt))+"s" 
             )
             if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
-                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.45e8, 4.55e8], "rv":[0.0119,0.0121], "rc":[0.00098, 0.00104]} )
+                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[4.45e8, 4.55e8], "rv":[0.0119,0.0121], "rc":[0.00095, 0.0011]} )
             if it == nt-1:
                 saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
 
 
 if __name__ == '__main__':
-    main("2m", pl_flag=True) 
+    #main("2m", pl_flag=True) 
     #main("1m")
-    #main("sd")
+    #main("sd",pl_flag=True)
     #main("sd", apr="S_adv", setup="wh")
-    main("2m", apr="S_adv", pl_flag=True)
-    #main("sd", apr="S_adv")
-    main("2m", apr="S_adv_adj", pl_flag=True)
+    #main("2m", apr="S_adv", pl_flag=True)
+    main("sd", apr="S_adv", pl_flag=True)
+    #main("2m", apr="S_adv_adj", pl_flag=True)
+    main("sd", apr="S_adv_adj", pl_flag=True)
