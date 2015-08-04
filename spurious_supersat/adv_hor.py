@@ -266,8 +266,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
             libmpdata.mpdata(state[var], crnt, 1);
         if scheme == "2m": print "qc min, max po adv", state["rc"].min(), state["rc"].max()
         print "testowa min, max po adv", state["testowa"].min(), state["testowa"].max()
-        if setup == "wh":
-            for ii in range(nx): wh.rho_adjust(state, nx)
+        if setup == "wh": wh.rho_adjust(state, nx)
 
 
         if apr in ["S_adv", "S_adv_adj"]: absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
@@ -304,8 +303,8 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
 
 
 if __name__ == '__main__':
-    main("2m", pl_flag=True) 
-    #main("2m", pl_flag=True, setup="wh")
+    #main("2m", pl_flag=True) 
+    main("2m", pl_flag=True, setup="wh")
     #main("1m")
     #main("sd",pl_flag=True)
     #main("2m", apr="S_adv", setup="wh", pl_flag=True)
