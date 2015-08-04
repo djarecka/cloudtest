@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
 import init_WH as wh
+import init_WH_rhoconst as wh_rho
 
 def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     nrow = (len(dct)+1)/2
@@ -223,7 +224,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 def main(scheme, apr="trad", setup="rhoconst", pl_flag = False, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=501, outfreq=500,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6, 
     # ammonium sulphate aerosol parameters:
@@ -237,6 +238,8 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
         state, var_adv = thermo_init(nx, sl_sg, scheme, apr)
     elif setup =="wh":
         state, var_adv = wh.thermo_init(nx, sl_sg, scheme, apr)
+    elif setup =="wh_rhoconst":
+        state, var_adv = wh_rho.thermo_init(nx, sl_sg, scheme, apr)
     else:
         assert(False)
 
@@ -288,7 +291,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
 
         if apr == "S_adv_adj": micro_adj(state["rv"], state["rc"], state["th_d"], state["rho_d"], state["del_S"])
         #pdb.set_trace()
-        if setup == "wh": wh.rho_adjust(state, nx)
+        #if setup == "wh": wh.rho_adjust(state, nx)
         calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
                 
         print "testowa po it = ", it
@@ -297,17 +300,17 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
               time=str(int(it*dt))+"s" 
             )
             if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
-                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015], "nc":[5.e8, 6.e8], "rv":[0.0108,0.0112], "rc":[0.00095, 0.0011]} )
+                     time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015]})#, "nc":[5.e8, 6.e8], "rv":[0.0108,0.0112], "rc":[0.00095, 0.0011]} )
             if it == nt-1:
                 saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
 
 
 if __name__ == '__main__':
     #main("2m", pl_flag=True) 
-    main("2m", pl_flag=True, setup="wh")
+    #main("2m", pl_flag=True, setup="wh")
     #main("1m")
     #main("sd",pl_flag=True)
-    #main("2m", apr="S_adv", setup="wh", pl_flag=True)
+    main("2m", apr="S_adv_adj",setup="wh",  pl_flag=True)
     #main("2m", apr="S_adv", pl_flag=True)
     #main("sd", apr="S_adv", pl_flag=True)
     #main("2m", apr="S_adv_adj", pl_flag=True)

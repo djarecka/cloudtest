@@ -55,7 +55,7 @@ def thermo_init(nx, sl_sg, scheme, apr, press=8.e4):
     #pdb.set_trace()
     if apr == "trad":
         var_adv = ["th_d", "rv", "testowa"]
-    elif apr == "S_adv":
+    elif apr in ["S_adv", "S_adv_adj"]:
         var_adv = ["th_d", "del_S", "testowa"]
     else:
         assert(False)
