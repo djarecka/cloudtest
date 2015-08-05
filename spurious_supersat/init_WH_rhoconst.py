@@ -47,12 +47,12 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 #        if th_0==303.8:
 #            pdb.set_trace()
-        state["Temp"][ii] = th_0 / (libcl.common.p_1000/press_0)**(libcl.common.R_d/libcl.common.c_pd) # to juz tak naprawde nie ejst dokladnie to samo cisnienie
+        state["Temp"][ii] = libcl.common.T(th_0, state["rho_d"][ii])
         #pdb.set_trace()
         pvs = libcl.common.p_vs(state["Temp"][ii])
         rvs = pvs / (state["rho_d"][ii] * libcl.common.R_v * state["Temp"][ii])
         state["rv"][ii] = RH_0 * rvs
-        state["th_d"][ii] = libcl.common.th_std2dry(th_0, state["rv"][ii])
+        state["th_d"][ii] = th_0
         #if th_0==303.8:                                                               
         #    pdb.set_trace()                                                           
 
