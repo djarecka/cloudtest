@@ -17,6 +17,7 @@ from matplotlib.font_manager import FontProperties
 
 import init_WH as wh
 import init_WH_rhoconst as wh_rho
+import init_slow_act as sl_act
 
 def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     nrow = (len(dct)+1)/2
@@ -186,7 +187,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
     #state["th_d"][sl_sg] += 1                                                              
     state["rv"] = np.ones((nx,))* 5.e-3
     state["rc"] = np.zeros((nx,))
-    state["rv"][sl_sg] += 8.e-3
+    state["rv"][sl_sg] += 7.e-3
     #state["rc"][sl_sg] += 1.e-3                                           
     state["rho_d"] = np.ones((nx,))*.97
     state["testowa"] = np.zeros((nx,))
@@ -224,14 +225,15 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 def main(scheme, apr="trad", setup="rhoconst", pl_flag = False, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=1501, outfreq=1500,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=2001, outfreq=2000,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6, 
-    # ammonium sulphate aerosol parameters:
+    # ammonium sulphate aerosol parameter:
     "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
     "sd_conc":512 #TODO trzeba tu?
-  }
+  },
+   sl_act_it = 200
 ):
 
     if setup == "rhoconst":
@@ -240,6 +242,8 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
         state, var_adv = wh.thermo_init(nx, sl_sg, scheme, apr)
     elif setup =="wh_rhoconst":
         state, var_adv = wh_rho.thermo_init(nx, sl_sg, scheme, apr)
+    elif setup =="slow_act":
+        state, var_adv = sl_act.thermo_init(nx, sl_sg, scheme, apr)
     else:
         assert(False)
 
@@ -262,17 +266,25 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
     saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_init.txt")
     for it in range(nt):
         print "it", it
-        if apr in ["S_adv", "S_adv_adj"]: rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
         print "testowa min, max przed adv", state["testowa"].min(), state["testowa"].max()
-        if scheme == "2m": print "qc min, max przed adv", state["rc"].min(), state["rc"].max()        
-        for var in var_adv:
-            libmpdata.mpdata(state[var], crnt, 1);
-        if scheme == "2m": print "qc min, max po adv", state["rc"].min(), state["rc"].max()
+       
+        if setup == "slow_act" and it < sl_act_it:
+            #if it>9:
+            #pdb.set_trace()
+            state["rv"][sl_sg] += 1.e-3 / sl_act_it
+            #pdb.set_trace()
+        else:
+            if apr in ["S_adv", "S_adv_adj"]: rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
+            for var in var_adv:
+                libmpdata.mpdata(state[var], crnt, 1);
         print "testowa min, max po adv", state["testowa"].min(), state["testowa"].max()
         if setup == "wh": wh.rho_adjust(state, nx)
 
-
-        if apr in ["S_adv", "S_adv_adj"]: absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
+        
+        if setup == "slow_act" and it < sl_act_it:
+                pass
+        else:
+            if apr in ["S_adv", "S_adv_adj"]: absS2rv(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
  
 
         if   scheme == "1m":
@@ -289,16 +301,18 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
             assert(False)
 
 
-        if apr == "S_adv_adj": micro_adj(state["rv"], state["rc"], state["th_d"], state["rho_d"], state["del_S"])
+        if setup == "slow_act" and it < sl_act_it:
+                pass
+        else:
+            if apr == "S_adv_adj": micro_adj(state["rv"], state["rc"], state["th_d"], state["rho_d"], state["del_S"])
         #pdb.set_trace()
         #if setup == "wh": wh.rho_adjust(state, nx)
         calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
                 
         print "testowa po it = ", it
-        if it % outfreq == 0 or it in [100]:
-            if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
-              time=str(int(it*dt))+"s" 
-            )
+        if it % outfreq == 0 or it in [1, 10, 20, 50, 100, 200, 500]:
+            #if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
+             # time=str(int(it*dt))+"s")
             if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
                      time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015]})#, "nc":[5.e8, 6.e8], "rv":[0.0108,0.0112], "rc":[0.00095, 0.0011]} )
             if it == nt-1:
@@ -306,11 +320,11 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
 
 
 if __name__ == '__main__':
-    #main("2m", pl_flag=True) 
-    #main("2m", pl_flag=True, setup="wh")
+    #main("2m", pl_flag=True, setup="slow_act", apr="S_adv_adj") 
+    #main("2m", pl_flag=True,apr="S_adv")
     #main("1m")
-    #main("sd",pl_flag=True)
-    main("2m", apr="S_adv_adj",setup="wh",  pl_flag=True)
+    main("sd",pl_flag=True,setup="slow_act")
+    #main("2m", apr="S_adv_adj",setup="wh",  pl_flag=True)
     #main("2m", apr="S_adv", pl_flag=True)
     #main("sd", apr="S_adv", pl_flag=True)
     #main("2m", apr="S_adv_adj", pl_flag=True)
