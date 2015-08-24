@@ -104,17 +104,18 @@ def libcl_spdr_init(rho_d, th_d, rv, C, dt, aerosol, dx=2): #TODO dx
     opts_init.dry_distros = {aerosol["kappa"]:lognormal}
 
     opts_init.coal_switch = opts_init.sedi_switch = False
-
+    
+    opts_init.sstp_cond = 5
     micro = libcl.lgrngn.factory(libcl.lgrngn.backend_t.serial, opts_init)
 
     C_arr = np.ones(rv.shape[0]+1) * C
     micro.init(th_d, rv, rho_d, C_arr)
     return micro
 
-def libcl_spdr(rhod, thd, rv, rc, nc, na, sd, dt, aerosol, micro):
+def libcl_spdr(rhod, thd, rv, rc, nc, na, sd, dt, aerosol, micro, adve=True):
     libopts = libcl.lgrngn.opts_t()
     libopts.cond = True
-    libopts.adve = True
+    libopts.adve = adve
     libopts.coal = libopts.sedi = False
 
     micro.step_sync(libopts, thd, rv, rhod)
@@ -225,7 +226,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 def main(scheme, apr="trad", setup="rhoconst", pl_flag = False, 
-  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.2, nt=2001, outfreq=2000,
+  nx=300, sl_sg = slice(50,100), crnt=0.1, dt=0.4, nt=1501, outfreq=1500,
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6, 
     # ammonium sulphate aerosol parameter:
@@ -233,7 +234,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
     "sd_conc":512 #TODO trzeba tu?
   },
-   sl_act_it = 200
+   sl_act_it = 900
 ):
 
     if setup == "rhoconst":
@@ -255,24 +256,25 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
 
     if scheme == "1m":
         dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S"))
-    elif scheme == "2m":
+    elif scheme in ["2m", "sd"]:
         dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
-    elif scheme == "sd":
-        dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc", "na", "sd"))
+    #elif scheme == "sd":
+    #    dic_var = dict((k, state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc", "na", "sd"))
     else:
         assert(False)
     
     if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_init.pdf", time="init") 
     saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_init.txt")
-    for it in range(nt):
+    for it in range(nt+sl_act_it):
         print "it", it
         print "testowa min, max przed adv", state["testowa"].min(), state["testowa"].max()
        
         if setup == "slow_act" and it < sl_act_it:
             #if it>9:
             #pdb.set_trace()
-            state["rv"][sl_sg] += 1.e-3 / sl_act_it
+            state["rv"][sl_sg] += 3.e-3 / sl_act_it
             #pdb.set_trace()
+            #pass
         else:
             if apr in ["S_adv", "S_adv_adj"]: rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
             for var in var_adv:
@@ -295,8 +297,13 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
                        state["nc"], state["nr"], dt, aerosol)
             #pdb.set_trace()
         elif scheme == "sd":
-            libcl_spdr(state["rho_d"], state["th_d"], state["rv"], state["rc"], 
-                       state["nc"], state["na"], state["sd"], dt, aerosol, micro)
+            if setup == "slow_act" and it < sl_act_it:
+                libcl_spdr(state["rho_d"], state["th_d"], state["rv"], state["rc"],
+                           state["nc"], state["na"], state["sd"], dt, aerosol, micro, 
+                           adve=False)
+            else:
+                libcl_spdr(state["rho_d"], state["th_d"], state["rv"], state["rc"], 
+                           state["nc"], state["na"], state["sd"], dt, aerosol, micro)
         else: 
             assert(False)
 
@@ -310,10 +317,10 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
         calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
                 
         print "testowa po it = ", it
-        if it % outfreq == 0 or it in [1, 10, 20, 50, 100, 200, 500]:
+        if it % outfreq == 0 or it in [ 100, 300, 900, 1500,  nt+sl_act_it-1]:
             #if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
              # time=str(int(it*dt))+"s")
-            if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s_ylim.pdf",
+            if pl_flag: plotting(dic_var, figname=scheme+"5sst_"+apr+"_"+setup+"_"+str(dt)+"_plot_"+str(int(it*dt))+"s_ylim.pdf",
                      time=str(int(it*dt))+"s", ylim_dic={"S":[-0.005, 0.015]})#, "nc":[5.e8, 6.e8], "rv":[0.0108,0.0112], "rc":[0.00095, 0.0011]} )
             if it == nt-1:
                 saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
@@ -323,7 +330,7 @@ if __name__ == '__main__':
     #main("2m", pl_flag=True, setup="slow_act", apr="S_adv_adj") 
     #main("2m", pl_flag=True,apr="S_adv")
     #main("1m")
-    main("sd",pl_flag=True,setup="slow_act")
+    main("sd", pl_flag=True, setup="slow_act")#, apr="S_adv_adj")
     #main("2m", apr="S_adv_adj",setup="wh",  pl_flag=True)
     #main("2m", apr="S_adv", pl_flag=True)
     #main("sd", apr="S_adv", pl_flag=True)

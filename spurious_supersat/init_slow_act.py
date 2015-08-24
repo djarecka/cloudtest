@@ -35,7 +35,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
     for ii in range(nx):
         if ii in range(sl_sg.start, sl_sg.stop):
-            th_0 = 303.8
+            #th_0 = 303.8
             RH_0    = 1.
             rc_0 = 0
             nc_0 = 0
@@ -51,7 +51,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
         #pdb.set_trace()
         pvs = libcl.common.p_vs(state["Temp"][ii])
         rvs = pvs / (state["rho_d"][ii] * libcl.common.R_v * state["Temp"][ii])
-        state["rv"][ii] = RH_0 * rvs #+ 1.e-3
+        state["rv"][ii] = RH_0 * rvs #+ 2.e-3
         state["th_d"][ii] = th_0
         #if th_0==303.8:                                                               
         #    pdb.set_trace()                                                           
@@ -65,7 +65,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
     #pdb.set_trace()
     if apr == "trad":
         var_adv = ["th_d", "rv", "testowa"]
-    elif apr == "S_adv":
+    elif apr in ["S_adv", "S_adv_adj"]:
         var_adv = ["th_d", "del_S", "testowa"]
     else:
         assert(False)
