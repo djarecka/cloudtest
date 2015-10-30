@@ -186,6 +186,6 @@ ss  = Superdroplet(nx=300, sl_sg=slice(50,100), apr="trad", C=0.1, dt=0.4, nt=30
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                         "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                         "sd_conc":512 #TODO trzeba tu?
-                        }, sl_act_it=200, setup="slow_act", n_intrp=1)
+                        }, sl_act_it=200, setup="slow_act", n_intrp=5)
 
 ss.all_sym()
