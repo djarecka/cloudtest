@@ -60,7 +60,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
         state["rc"][ii] = rc_0
         state["nc"][ii] = nc_0
 
-
+    state["rv_sl_act"] = 3.e-3
 
     #pdb.set_trace()
     if apr == "trad":
