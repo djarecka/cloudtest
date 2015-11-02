@@ -59,7 +59,7 @@ class Micro:
                                     
 
 class Superdroplet(Micro):
-    def __init__(self, nx, sl_sg, apr, C, dt, nt, sl_act_it, aerosol, setup="rhoconst", dx=2, n_intrp=1):
+    def __init__(self, nx, dx, sl_sg, apr, C, dt, nt, sl_act_it, aerosol, setup="rhoconst", n_intrp=1):
 
         Micro.__init__(self, nx, sl_sg, apr, setup, scheme="sd")
          
@@ -71,7 +71,8 @@ class Superdroplet(Micro):
         self.dx = dx
         self.n_intrp = n_intrp
         self.nt = nt
-        self.sl_act_it = sl_act_it
+        if setup=="rhoconst": self.sl_act_it = 0
+        if setup=="slow_act": self.sl_act_it = sl_act_it
         self.C = C
         self.sl_sg = sl_sg
         
@@ -102,7 +103,7 @@ class Superdroplet(Micro):
         elif self.n_intrp > 1:
             self.interp_adv2micro()
             
-        self.C_arr = np.ones(self.state_micro["rv"].shape[0]+1) * C
+        self.C_arr = np.ones(self.state_micro["rv"].shape[0]+1) * C #/ float(self.n_intrp)
         
         self.micro.init(self.state_micro["th_d"], self.state_micro["rv"], self.state_micro["rho_d"], self.C_arr)
         
@@ -159,6 +160,7 @@ class Superdroplet(Micro):
         for it in range(self.nt+self.sl_act_it):
             print "it", it
             if it < self.sl_act_it:
+                pdb.set_trace()
                 self.slow_act()                
                 self.micro_step(adve=False)
             else:
@@ -166,26 +168,38 @@ class Superdroplet(Micro):
                 ss.advection()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
                 print "po adv rv", self.state["rv"].max()
+                if it in [1, 2, 5, 10, 20, self.nt-1]:
+                    self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "nc"))
+                    plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
+                                                                                
                 if self.n_intrp > 1: self.interp_adv2micro()
+                if it in [1, 2, 5, 10, 20, self.nt-1]:
+                    self.dic_var = dict((k, self.state_micro[k]) for k in ('rc', 'rv', 'th_d', "nc"))
+                    plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
+                                                                            
                 self.micro_step()
+                if it in [1, 2, 5, 10, 20, self.nt-1]:
+                    self.dic_var = dict((k, self.state_micro[k]) for k in ('rc', 'rv', 'th_d', "nc"))
+                    plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
+                                                                            
                 if self.n_intrp > 1: self.interp_micro2adv()
                 #pdb.set_trace()
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
-        #pdb.set_trace()    
-        self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
-        #pdb.set_trace()
-        plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
-        saving_state(self.dic_var, filename="test_dane.txt")#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
+            if it in [1, 2, 5, 10, 20, self.nt-1]:
+
+                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "nc"))
+                plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
+                saving_state(self.dic_var, filename="test_dane.txt")#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
         
         
         
-ss  = Superdroplet(nx=300, sl_sg=slice(50,100), apr="trad", C=0.1, dt=0.4, nt=300,
+ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=0.1, dt=0.4, nt=300,
                     aerosol={
                         "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                         "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                         "sd_conc":512 #TODO trzeba tu?
-                        }, sl_act_it=200, setup="slow_act", n_intrp=5)
+                        }, sl_act_it=200, n_intrp=2)
 
 ss.all_sym()
