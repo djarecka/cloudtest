@@ -18,8 +18,12 @@ import init_slow_act as sl_act
 import init_default as dft
 
 class Micro:
-    def __init__(self, nx, sl_sg, apr, setup, scheme):
+    def __init__(self, nx, dx, nt, dt, sl_sg, apr, setup, scheme):
         self.nx = nx
+        self.dx = dx
+        self.nt = nt
+        self.dt = dt
+                                
         self.sl_sg = sl_sg
         self.apr = apr
         self.scheme = scheme
@@ -61,24 +65,20 @@ class Micro:
 class Superdroplet(Micro):
     def __init__(self, nx, dx, sl_sg, apr, C, dt, nt, sl_act_it, aerosol, setup="rhoconst", n_intrp=1):
 
-        Micro.__init__(self, nx, sl_sg, apr, setup, scheme="sd")
+        Micro.__init__(self, nx, dx, nt, dt, sl_sg, apr, setup, scheme="sd")
          
         #TODO czy to sie updatuje??/ nie jak jest n_intrp>1 - pomyslec!
         self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
                 
         self.aerosol = aerosol
-        self.dt = dt
-        self.dx = dx
         self.n_intrp = n_intrp
-        self.nt = nt
         if setup=="rhoconst": self.sl_act_it = 0
         if setup=="slow_act": self.sl_act_it = sl_act_it
         self.C = C
-        self.sl_sg = sl_sg
         
         self.opts_init = libcl.lgrngn.opts_init_t()
         self.opts_init.dt = dt
-        self.opts_init.nx = (self.nx-1) * self.n_intrp + 1
+        self.opts_init.nx = self.nx * self.n_intrp 
         self.opts_init.dx = dx / float(self.n_intrp)
         self.opts_init.x1 = self.opts_init.nx * self.opts_init.dx
 
@@ -103,13 +103,14 @@ class Superdroplet(Micro):
         elif self.n_intrp > 1:
             self.interp_adv2micro()
             
-        self.C_arr = np.ones(self.state_micro["rv"].shape[0]+1) * C #/ float(self.n_intrp)
+        self.C_arr = np.ones(self.state_micro["rv"].shape[0]+1) * self.C * float(self.n_intrp)
         
         self.micro.init(self.state_micro["th_d"], self.state_micro["rv"], self.state_micro["rho_d"], self.C_arr)
         
     def interp_adv2micro(self):
-        x_adv = np.arange(self.nx)
-        x_micro = np.arange(self.opts_init.nx) / float(self.n_intrp)
+        x_adv = np.arange(self.nx) + 1 / 2.
+        x_micro = (np.arange(self.opts_init.nx) + 1 / 2.) / float(self.n_intrp)
+        #pdb.set_trace()
         for var in ["rv", "th_d", "rho_d", "sd", "na", "nc", "rc"]:
             self.state_micro[var] = np.interp(x_micro, x_adv, self.state[var])
             
@@ -168,25 +169,17 @@ class Superdroplet(Micro):
                 ss.advection()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
                 print "po adv rv", self.state["rv"].max()
-                if it in [1, 2, 5, 10, 20, self.nt-1]:
-                    self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "nc"))
-                    plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
-                                                                                
                 if self.n_intrp > 1: self.interp_adv2micro()
-                if it in [1, 2, 5, 10, 20, self.nt-1]:
-                    self.dic_var = dict((k, self.state_micro[k]) for k in ('rc', 'rv', 'th_d', "nc"))
-                    plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
-                                                                            
                 self.micro_step()
-                if it in [1, 2, 5, 10, 20, self.nt-1]:
-                    self.dic_var = dict((k, self.state_micro[k]) for k in ('rc', 'rv', 'th_d', "nc"))
-                    plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
+                #if it in [1, 2, 5, 10, 20, self.nt-1]:
+                #    self.dic_var = dict((k, self.state_micro[k]) for k in ('rc', 'rv', 'th_d', "nc"))
+                #    plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
                                                                             
                 if self.n_intrp > 1: self.interp_micro2adv()
                 #pdb.set_trace()
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
-            if it in [1, 2, 5, 10, 20, self.nt-1]:
+            if it in [1, 10, 20, 40, 100, self.nt-1]:
 
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "nc"))
                 plotting(self.dic_var, figname="Testplot_init.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
