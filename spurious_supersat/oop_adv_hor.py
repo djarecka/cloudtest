@@ -93,7 +93,7 @@ class Superdroplet(Micro):
         
         self.opts_init.coal_switch = self.opts_init.sedi_switch = False
         
-        self.opts_init.sstp_cond = 5
+        self.opts_init.sstp_cond = 1
         self.micro = libcl.lgrngn.factory(libcl.lgrngn.backend_t.serial, self.opts_init)
 
         self.state_micro = {}
@@ -104,7 +104,7 @@ class Superdroplet(Micro):
             self.interp_adv2micro()
             
         self.C_arr = np.ones(self.state_micro["rv"].shape[0]+1) * self.C * float(self.n_intrp)
-        
+        #pdb.set_trace()
         self.micro.init(self.state_micro["th_d"], self.state_micro["rv"], self.state_micro["rho_d"], self.C_arr)
         
     def interp_adv2micro(self):
@@ -126,7 +126,7 @@ class Superdroplet(Micro):
         libopts.cond = True
         libopts.adve = adve
         libopts.coal = libopts.sedi = False
-        
+
         self.micro.step_sync(libopts, self.state_micro["th_d"], self.state_micro["rv"], self.state_micro["rho_d"])
         self.micro.step_async(libopts)
         
@@ -140,7 +140,7 @@ class Superdroplet(Micro):
         self.state_micro["na"][:] = np.frombuffer(self.micro.outbuf())
         
         # number of particles (per kg of dry air) with r_w > .5 um
-        self.micro.diag_wet_rng(.5e-6, 1)
+        self.micro.diag_all()#wet_rng(.5e-6, 1)
         self.micro.diag_wet_mom(0)
         self.state_micro["nc"][:] = np.frombuffer(self.micro.outbuf())
         
@@ -161,23 +161,25 @@ class Superdroplet(Micro):
         for it in range(self.nt+self.sl_act_it):
             print "it", it
             if it < self.sl_act_it:
-                #pdb.set_trace()
                 self.slow_act()                
                 self.micro_step(adve=False)
+                #if it==10: pdb.set_trace()
             else:
-                if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
-                ss.advection()
-                if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
-                print "po adv rv", self.state["rv"].max()
                 if self.n_intrp > 1: self.interp_adv2micro()
-                if it==100: pdb.set_trace()
+                if it==101: pdb.set_trace()
                 self.micro_step()
-                if it==100: pdb.set_trace()
+                if it==101: pdb.set_trace()
                 if self.n_intrp > 1: self.interp_micro2adv()
+                if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
+                if it==100: pdb.set_trace()
+                ss.advection()
+                if it==100: pdb.set_trace()
+                if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
+                            
                 #pdb.set_trace()
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
-            if it in [99, 100, 101, self.nt-1]:
+            if it in [99, 100, 101, 200, 499]:
 
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d',"Temp", "S", "nc"))
                 plotting(self.dic_var, figname="Testplot.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
@@ -185,7 +187,7 @@ class Superdroplet(Micro):
         
         
         
-ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=1., dt=0.4, nt=100,
+ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=.1, dt=.2, nt=500,
                     aerosol={
                         "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
