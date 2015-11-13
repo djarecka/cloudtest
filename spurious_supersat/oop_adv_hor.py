@@ -88,7 +88,7 @@ class Superdroplet(Micro):
                 -(lnr - log(self.aerosol["meanr"]))**2 / 2 / log(self.aerosol["gstdv"])**2
             ) / log(self.aerosol["gstdv"]) / sqrt(2*pi)
                 
-        self.opts_init.sd_conc_mean = self.aerosol["sd_conc"] / self.n_intrp
+        self.opts_init.sd_conc = self.aerosol["sd_conc"] / self.n_intrp
         self.opts_init.dry_distros = {self.aerosol["kappa"]:lognormal}
         
         self.opts_init.coal_switch = self.opts_init.sedi_switch = False
@@ -140,7 +140,7 @@ class Superdroplet(Micro):
         self.state_micro["na"][:] = np.frombuffer(self.micro.outbuf())
         
         # number of particles (per kg of dry air) with r_w > .5 um
-        self.micro.diag_all()#wet_rng(.5e-6, 1)
+        self.micro.diag_wet_rng(.5e-6, 1)
         self.micro.diag_wet_mom(0)
         self.state_micro["nc"][:] = np.frombuffer(self.micro.outbuf())
         
@@ -163,36 +163,36 @@ class Superdroplet(Micro):
             if it < self.sl_act_it:
                 self.slow_act()                
                 self.micro_step(adve=False)
-                #if it==10: pdb.set_trace()
+                #if it==299: pdb.set_trace()
             else:
                 if self.n_intrp > 1: self.interp_adv2micro()
-                if it==101: pdb.set_trace()
+                if it in [600, 601, 602, 650]: pdb.set_trace()
                 self.micro_step()
-                if it==101: pdb.set_trace()
+                if it in [600, 601, 602, 650]: pdb.set_trace()
                 if self.n_intrp > 1: self.interp_micro2adv()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
-                if it==100: pdb.set_trace()
+                if it==600: pdb.set_trace()
                 ss.advection()
-                if it==100: pdb.set_trace()
+                if it==600: pdb.set_trace()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
                             
                 #pdb.set_trace()
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
-            if it in [99, 100, 101, 200, 499]:
+            if it in [50, 100, 200, 400, 600, 601, 620, 650, 700, 800, 999, 1000, 1200, 1400, 1600, 1800, 1990]:
 
-                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d',"Temp", "S", "nc"))
-                plotting(self.dic_var, figname="Testplot.pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
+                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d',"na", "S", "nc"))
+                plotting(self.dic_var, figname="newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_it="+str(it)+".pdf", time=str(it), ylim_dic={"S":[-0.005, 0.015]})
                 saving_state(self.dic_var, filename="test_dane.txt")#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
         
         
         
-ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=.1, dt=.2, nt=500,
+ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=.1, dt=.1, nt=1400,
                     aerosol={
-                        "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6,
+                        "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                         "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                         "sd_conc":512 #TODO trzeba tu?
-                        }, sl_act_it=100, n_intrp=1, setup="slow_act")
+                        }, sl_act_it=600, n_intrp=1, setup="slow_act")
 
 ss.all_sym()
