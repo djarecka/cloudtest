@@ -60,7 +60,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
         state["rc"][ii] = rc_0
         state["nc"][ii] = nc_0
 
-    state["rv_sl_act"] = 3.e-3
+    state["rv_sl_act"] = .5e-3
 
     #pdb.set_trace()
     if apr == "trad":
@@ -70,7 +70,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
     else:
         assert(False)
 
-    if scheme in ["1m", "2m"]:
+    if scheme in ["1m", "2m", "sd"]:
            state["rr"] = np.zeros((nx,))
            var_adv = var_adv + ["rc", "rr"]
 
