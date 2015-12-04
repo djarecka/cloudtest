@@ -2,4 +2,4 @@ cmake .
 
 make
 
-python adv_hor.py
+python oop_adv_hor.py
