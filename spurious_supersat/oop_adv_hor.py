@@ -20,10 +20,10 @@ import init_slow_act as sl_act
 import init_default as dft
 
 class Micro:
-    def __init__(self, nx, dx, nt, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_it, test):
+    def __init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test):
         self.nx = nx
         self.dx = dx
-        self.nt = nt
+        self.nt = int(time_adv_tot/dt)
         self.dt = dt
                                 
         self.sl_sg = sl_sg
@@ -38,14 +38,21 @@ class Micro:
                                                           scheme=self.scheme, apr=self.apr)
         self.test = test    
         if not self.test:
-            self.outputdir = "output/Test_scheme="+scheme+"_setup="+setup+"_apr="+apr
-            if setup=="slow_act": self.outputdir += "_sl_act_it=" + str(sl_act_it)
-            if n_intrp>1: self.outputdir += "_nintrp=" + str(n_intrp)
+            if setup=="slow_act": dir_name += "_sl_act_time=" + str(sl_act_time) + "s"
+            if n_intrp>1: dir_name += "_nintrp=" + str(n_intrp)
+            self.outputdir = os.path.join("output", dir_name)
             if os.path.exists(self.outputdir):
                 call(["rm", "-r", self.outputdir])
             call(["mkdir", self.outputdir])
-        
-            
+
+        # I only want to remove the dir if self.test=False
+        self.plotdir = os.path.join("plots", dir_name)
+        if os.path.exists(self.plotdir) and not self.test:
+            call(["rm", "-r", self.plotdir])
+            call(["mkdir", self.plotdir])
+        elif not os.path.exists(self.plotdir):
+            call(["mkdir", self.plotdir])
+                                
         
     def calc_S(self):
         for i in range(len(self.state["S"])):
@@ -75,9 +82,10 @@ class Micro:
                                     
 
 class Superdroplet(Micro):
-    def __init__(self, nx, dx, sl_sg, apr, C, dt, nt, sl_act_it, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, test=True):
+    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, test=True):
 
-        Micro.__init__(self, nx, dx, nt, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_it, test)
+        dir_name = "Test_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C)
+        Micro.__init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test)
          
         #TODO czy to sie updatuje??/ nie jak jest n_intrp>1 - pomyslec!
         self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
@@ -85,7 +93,7 @@ class Superdroplet(Micro):
         self.aerosol = aerosol
         self.n_intrp = n_intrp
         if setup=="rhoconst": self.sl_act_it = 0
-        if setup=="slow_act": self.sl_act_it = sl_act_it
+        if setup=="slow_act": self.sl_act_it = int(sl_act_time/self.dt)
         self.C = C
         
         self.opts_init = libcl.lgrngn.opts_init_t()
@@ -183,12 +191,19 @@ class Superdroplet(Micro):
     def all_sym(self):
         self.calc_S()
         print "po S", self.state["S"].max()
-        plotting(self.dic_var, figname="Testplot_init.pdf", time="init")
+        plotting(self.dic_var, figname=os.path.join(self.plotdir, "TestplotRH95_init.pdf"), time="init")
         if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "init.txt"))
+
+        it_output = [50, self.sl_act_it/4., self.sl_act_it/2]
+        for Dx in [0, 5, 10, 20, 50, 100, 150, 200]:
+            it_out = Dx * 1./ self.C
+            for i in range(1,int(1/self.C)+2):
+                it_output.append(self.sl_act_it + it_out + i)
+                                                                                    
         
         for it in range(self.nt+self.sl_act_it):
-            print "it", it
-            if it < self.sl_act_it:
+            print "it", it, it <= self.sl_act_it
+            if it <= self.sl_act_it:
                 
                 self.slow_act()
                 if self.n_intrp > 1: self.interp_adv2micro()
@@ -205,26 +220,23 @@ class Superdroplet(Micro):
                 #pdb.set_trace()
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
-            if it in [1, 5, 40, 60, 100, self.sl_act_it/4., self.sl_act_it/2, self.sl_act_it,
-                      self.sl_act_it+10, self.sl_act_it+20, self.sl_act_it+30,
-                      self.sl_act_it+40, self.sl_act_it+50, self.sl_act_it+70,
-                      self.sl_act_it+100, self.sl_act_it+150, self.sl_act_it+200,
-                      self.sl_act_it+250, self.sl_act_it+300, self.sl_act_it+350,
-                      self.sl_act_it+400, self.sl_act_it+450, self.sl_act_it+500,
-                      self.sl_act_it+1000, self.sl_act_it+1500, self.sl_act_it+2000]:
+                               
+                
+            if it in it_output:
+                #pdb.set_trace()
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d',"na", "nc", "S"))
-                plotting(self.dic_var, figname="plots/newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str(it)+".pdf", time=str(it-self.sl_act_it), ylim_dic={"S":[-0.005, 0.015]})
-                if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(it-self.sl_act_it)+".txt"))#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
+                plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str(int(it*self.dt))+"s.pdf"), time=str(int(self.dt*(it-self.sl_act_it))), ylim_dic={"S":[-0.005, 0.015]})
+                if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it-self.sl_act_it)))+"s.txt"))#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
+                #pdb.set_trace()
         
         
-        
-ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="trad", C=1., dt=.1, nt=10010,
+ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="trad", C=.1, dt=.1, time_adv_tot=1001,
                     aerosol={
                         "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                         "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
-                        "sd_conc":200 #TODO trzeba tu?
-                        }, sl_act_it=600, n_intrp=5, setup="slow_act", scheme="sd",
-                   test=True)
+                        "sd_conc":256 #TODO trzeba tu?
+                        }, sl_act_time=60, n_intrp=1, setup="slow_act", scheme="sd",
+                   test=False)
 
 ss.all_sym()

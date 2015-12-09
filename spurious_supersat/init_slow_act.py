@@ -41,7 +41,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
             nc_0 = 0
         else:
             th_0 =  302.8
-            RH_0    = 0.5
+            RH_0    = 0.95
             rc_0 = 0.
             nc_0 = 0
 
