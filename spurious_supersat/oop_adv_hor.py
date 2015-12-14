@@ -14,10 +14,33 @@ from subprocess import call
 
 from adv_hor import plotting, saving_state
 
+import matplotlib
+#matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+
 import init_WH as wh
 import init_WH_rhoconst as wh_rho
 import init_slow_act as sl_act
 import init_default as dft
+
+#TODO przeniesc
+def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf"):
+    nrow = (len(dct_max))
+    fig, tpl = plt.subplots(nrows=nrow, ncols=1, figsize=(10,8.5))
+    i=0
+    for k,v in dct_max.iteritems():
+        tpl_el = tpl[i%nrow]
+        tpl_el.set_title(k)
+        tpl_el.plot(v, "b")
+        if k in dct_mean.keys():
+            tpl_el.plot(dct_mean[k], "r")
+        i+=1
+    plt.savefig(figname)
+    plt.show()
+        
+
 
 class Micro:
     def __init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test):
@@ -84,7 +107,7 @@ class Micro:
 class Superdroplet(Micro):
     def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, test=True):
 
-        dir_name = "Test_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C)
+        dir_name = "Test_RH0.5_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
         Micro.__init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test)
          
         #TODO czy to sie updatuje??/ nie jak jest n_intrp>1 - pomyslec!
@@ -156,9 +179,9 @@ class Superdroplet(Micro):
         
 
             
-    def micro_step(self, adve=True):
+    def micro_step(self, adve=True, cond=True):
         libopts = libcl.lgrngn.opts_t()
-        libopts.cond = True
+        libopts.cond = cond
         libopts.adve = adve
         libopts.coal = libopts.sedi = False
 
@@ -191,16 +214,21 @@ class Superdroplet(Micro):
     def all_sym(self):
         self.calc_S()
         print "po S", self.state["S"].max()
-        plotting(self.dic_var, figname=os.path.join(self.plotdir, "TestplotRH95_init.pdf"), time="init")
+        plotting(self.dic_var, figname=os.path.join(self.plotdir, "TestplotRH5_init.pdf"), time="init")
         if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "init.txt"))
 
         it_output = [50, self.sl_act_it/4., self.sl_act_it/2]
         for Dx in [0, 5, 10, 20, 50, 100, 150, 200]:
             it_out = Dx * 1./ self.C
-            for i in range(1,int(1/self.C)+2):
+            for i in range(1,2):#,int(1/self.C)+2):
                 it_output.append(self.sl_act_it + it_out + i)
                                                                                     
-        
+        max_state = {}
+        meancl_state = {}
+        for vv in ["S", "nc", "rc"]:
+            max_state[vv] = []
+            meancl_state[vv] = []
+
         for it in range(self.nt+self.sl_act_it):
             print "it", it, it <= self.sl_act_it
             if it <= self.sl_act_it:
@@ -220,17 +248,24 @@ class Superdroplet(Micro):
                 #pdb.set_trace()
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
-                               
+
+            
+            for vv in ["S", "nc", "rc"]:
+                max_state[vv].append(self.state[vv].max())
+                meancl_state[vv].append(self.state[vv][np.where(self.state["rc"]>0)].mean())
+                #pdb.set_trace()
                 
             if it in it_output:
                 #pdb.set_trace()
-                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d',"na", "nc", "S"))
+                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'sd', "na", "nc", "S"))
                 plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str(int(it*self.dt))+"s.pdf"), time=str(int(self.dt*(it-self.sl_act_it))), ylim_dic={"S":[-0.005, 0.015]})
                 if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it-self.sl_act_it)))+"s.txt"))#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
                 #pdb.set_trace()
+        print "S_max", max_state["S"]
+        plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max.pdf"))
+    
         
-        
-ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="trad", C=.1, dt=.1, time_adv_tot=1001,
+ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="trad", C=.5, dt=.1, time_adv_tot=101,
                     aerosol={
                         "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
