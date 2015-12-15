@@ -220,7 +220,7 @@ class Superdroplet(Micro):
         it_output = [50, self.sl_act_it/4., self.sl_act_it/2]
         for Dx in [0, 5, 10, 20, 50, 100, 150, 200]:
             it_out = Dx * 1./ self.C
-            for i in range(1,2):#,int(1/self.C)+2):
+            for i in range(1,int(1/self.C)+2):
                 it_output.append(self.sl_act_it + it_out + i)
                                                                                     
         max_state = {}
@@ -245,7 +245,7 @@ class Superdroplet(Micro):
                 ss.advection()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
                             
-                #pdb.set_trace()
+                #pdb.set_trace()0
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
 
@@ -265,7 +265,7 @@ class Superdroplet(Micro):
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max.pdf"))
     
         
-ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="trad", C=.5, dt=.1, time_adv_tot=101,
+ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, time_adv_tot=101,
                     aerosol={
                         "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
