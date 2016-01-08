@@ -26,19 +26,19 @@ import init_slow_act as sl_act
 import init_default as dft
 
 #TODO przeniesc
-def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf"):
+def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf", it0=0, it_step=1, show=False):
     nrow = (len(dct_max))
     fig, tpl = plt.subplots(nrows=nrow, ncols=1, figsize=(10,8.5))
     i=0
     for k,v in dct_max.iteritems():
         tpl_el = tpl[i%nrow]
         tpl_el.set_title(k)
-        tpl_el.plot(v, "b")
+        tpl_el.plot(v[it0::it_step], "b")
         if k in dct_mean.keys():
-            tpl_el.plot(dct_mean[k], "r")
+            tpl_el.plot(dct_mean[k][it0::it_step], "r")
         i+=1
     plt.savefig(figname)
-    plt.show()
+    if show: plt.show()
         
 
 
@@ -217,10 +217,10 @@ class Superdroplet(Micro):
         plotting(self.dic_var, figname=os.path.join(self.plotdir, "TestplotRH5_init.pdf"), time="init")
         if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "init.txt"))
 
-        it_output = [50, self.sl_act_it/4., self.sl_act_it/2]
+        it_output = [2, 5, 20, 20, 50, 100, self.sl_act_it/4., self.sl_act_it/2., self.sl_act_it*3./4]
         for Dx in [0, 5, 10, 20, 50, 100, 150, 200]:
             it_out = Dx * 1./ self.C
-            for i in range(1,int(1/self.C)+2):
+            for i in [1, 1+int(0.5/self.C)]:#range(1,2):#int(1/self.C)+2):
                 it_output.append(self.sl_act_it + it_out + i)
                                                                                     
         max_state = {}
@@ -237,6 +237,7 @@ class Superdroplet(Micro):
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step(adve=False)
                 if self.n_intrp > 1: self.interp_micro2adv()
+                if it==self.sl_act_it: all_water_i = self.state["rv"].sum() + self.state["rc"].sum()
             else:
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step()
@@ -244,7 +245,8 @@ class Superdroplet(Micro):
                 if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
                 ss.advection()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
-                            
+                if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
+                                
                 #pdb.set_trace()0
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
@@ -258,11 +260,16 @@ class Superdroplet(Micro):
             if it in it_output:
                 #pdb.set_trace()
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'sd', "na", "nc", "S"))
-                plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str(int(it*self.dt))+"s.pdf"), time=str(int(self.dt*(it-self.sl_act_it))), ylim_dic={"S":[-0.005, 0.015]})
+                plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str(it*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
                 if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it-self.sl_act_it)))+"s.txt"))#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
-                #pdb.set_trace()
-        print "S_max", max_state["S"]
+        #pdb.set_trace()
+    
+        print "Nc_max", max_state["nc"]
+        print "all_water, init, final, rel_diff", all_water_i, all_water_f, (all_water_i-all_water_f)/all_water_i
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max.pdf"))
+        plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_fullstep.pdf"), it0=1, it_step=int(1/self.C))
+        plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_halfstep.pdf"), it0=1+int(0.5/self.C), it_step=int(1/self.C), show=True)
+        
     
         
 ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, time_adv_tot=101,
@@ -270,7 +277,7 @@ ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, 
                         "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                         "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
-                        "sd_conc":256 #TODO trzeba tu?
+                        "sd_conc":512 #TODO trzeba tu?
                         }, sl_act_time=60, n_intrp=1, setup="slow_act", scheme="sd",
                    test=False)
 
