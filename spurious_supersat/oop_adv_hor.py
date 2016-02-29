@@ -132,6 +132,7 @@ class Superdroplet(Micro):
             ) / log(self.aerosol["gstdv"]) / sqrt(2*pi)
                 
         self.opts_init.sd_conc = self.aerosol["sd_conc"] / self.n_intrp
+        self.opts_init.n_sd_max = self.opts_init.sd_conc * self.opts_init.nx
         self.opts_init.dry_distros = {self.aerosol["kappa"]:lognormal}
         
         self.opts_init.coal_switch = self.opts_init.sedi_switch = False
@@ -277,7 +278,7 @@ ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, 
                         "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                         "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                         "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
-                        "sd_conc":512 #TODO trzeba tu?
+                        "sd_conc":256 #TODO trzeba tu?
                         }, sl_act_time=60, n_intrp=1, setup="slow_act", scheme="sd",
                    test=False)
 
