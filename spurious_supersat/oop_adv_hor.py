@@ -105,14 +105,15 @@ class Micro:
                                     
 
 class Superdroplet(Micro):
-    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, test=True):
+    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, test=True, dirname_pre = "test", it_output_l = []):
 
-        dir_name = "Test_RH0.5_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
+        dir_name = dirname_pre+"_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
         Micro.__init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test)
          
         #TODO czy to sie updatuje??/ nie jak jest n_intrp>1 - pomyslec!
         self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
-                
+        self.it_output = it_output_l
+        
         self.aerosol = aerosol
         self.n_intrp = n_intrp
         if setup=="rhoconst": self.sl_act_it = 0
@@ -209,8 +210,10 @@ class Superdroplet(Micro):
         self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())
 
     def slow_act(self):
-        self.state["rv"][self.sl_sg] += self.state["rv_sl_act"] / self.sl_act_it
-
+        if self.setup=="slow_act":
+            self.state["rv"][self.sl_sg] += self.state["rv_sl_act"] / self.sl_act_it
+        else:
+            pass
 
     def all_sym(self):
         self.calc_S()
@@ -218,11 +221,11 @@ class Superdroplet(Micro):
         plotting(self.dic_var, figname=os.path.join(self.plotdir, "TestplotRH5_init.pdf"), time="init")
         if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "init.txt"))
 
-        it_output = [2, 5, 20, 20, 50, 100, self.sl_act_it/4., self.sl_act_it/2., self.sl_act_it*3./4]
-        for Dx in [0, 5, 10, 20, 50, 100, 150, 200]:
-            it_out = Dx * 1./ self.C
-            for i in [1, 1+int(0.5/self.C)]:#range(1,2):#int(1/self.C)+2):
-                it_output.append(self.sl_act_it + it_out + i)
+        it_output = self.it_output#[2, 5, 20, 20, 50, 100, self.sl_act_it/4., self.sl_act_it/2., self.sl_act_it*3./4]
+#        for Dx in [0, 5, 10, 20, 50, 100, 150, 200]:
+#            it_out = Dx * 1./ self.C
+#            for i in [1, 1+int(0.5/self.C)]:#range(1,2):#int(1/self.C)+2):
+#                it_output.append(self.sl_act_it + it_out + i)
                                                                                     
         max_state = {}
         meancl_state = {}
@@ -231,24 +234,22 @@ class Superdroplet(Micro):
             meancl_state[vv] = []
 
         for it in range(self.nt+self.sl_act_it):
-            print "it", it, it <= self.sl_act_it
-            if it <= self.sl_act_it:
-                
+            print "it", it, it < self.sl_act_it
+            if it < self.sl_act_it:
                 self.slow_act()
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step(adve=False)
                 if self.n_intrp > 1: self.interp_micro2adv()
                 if it==self.sl_act_it: all_water_i = self.state["rv"].sum() + self.state["rc"].sum()
             else:
+                if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
+                self.advection()
+                if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step()
                 if self.n_intrp > 1: self.interp_micro2adv()
-                if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
-                ss.advection()
-                if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
                 if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
                                 
-                #pdb.set_trace()0
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
 
@@ -256,30 +257,31 @@ class Superdroplet(Micro):
             for vv in ["S", "nc", "rc"]:
                 max_state[vv].append(self.state[vv].max())
                 meancl_state[vv].append(self.state[vv][np.where(self.state["rc"]>0)].mean())
-                #pdb.set_trace()
-                
+            #pdb.set_trace()
+            
             if it in it_output:
                 #pdb.set_trace()
-                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'sd', "na", "nc", "S"))
-                plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str(it*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
-                if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it-self.sl_act_it)))+"s.txt"))#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
+                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'sd', "na", "nc", "th_d", "S"))
+                plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str((it+1)*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
+                if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it+1-self.sl_act_it)))+"s.txt"))#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
         #pdb.set_trace()
     
         print "Nc_max", max_state["nc"]
-        print "all_water, init, final, rel_diff", all_water_i, all_water_f, (all_water_i-all_water_f)/all_water_i
+        #TODOprint "all_water, init, final, rel_diff", all_water_i, all_water_f, (all_water_i-all_water_f)/all_water_i
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max.pdf"))
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_fullstep.pdf"), it0=1, it_step=int(1/self.C))
-        plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_halfstep.pdf"), it0=1+int(0.5/self.C), it_step=int(1/self.C), show=True)
+        plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_halfstep.pdf"), it0=1+int(0.5/self.C), it_step=int(1/self.C), show=False)
         
     
-        
-ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, time_adv_tot=101,
-                    aerosol={
-                        "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
-                        "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
-                        "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
-                        "sd_conc":256 #TODO trzeba tu?
-                        }, sl_act_time=60, n_intrp=1, setup="slow_act", scheme="sd",
-                   test=False)
 
-ss.all_sym()
+if __name__ == '__main__':
+    ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, time_adv_tot=101,
+                       aerosol={
+                           "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
+                           "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
+                           "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
+                           "sd_conc":256 #TODO trzeba tu?
+                       }, sl_act_time=60, n_intrp=1, setup="slow_act", scheme="sd",
+                       test=False)
+
+    ss.all_sym()
