@@ -30,7 +30,7 @@ def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
       tpl[i%nrow,i/nrow].plot(v)
       i+=1
     plt.savefig(figname)
-    plt.show()
+    #plt.show()
 
 def saving_state(dic, filename):
     dic_list = {}
@@ -100,7 +100,8 @@ def libcl_spdr_init(rho_d, th_d, rv, C, dt, aerosol, dx=2): #TODO dx
       -(lnr - log(aerosol["meanr"]))**2 / 2 / log(aerosol["gstdv"])**2
     ) / log(aerosol["gstdv"]) / sqrt(2*pi);
 
-    opts_init.sd_conc_mean = aerosol["sd_conc"]
+    opts_init.sd_conc = aerosol["sd_conc"]
+    opts_init.n_sd_max = opts_init.sd_conc * opts_init.nx
     opts_init.dry_distros = {aerosol["kappa"]:lognormal}
 
     opts_init.coal_switch = opts_init.sedi_switch = False
@@ -226,7 +227,8 @@ def thermo_init(nx, sl_sg, scheme, apr):
 
 
 def main(scheme, apr="trad", setup="rhoconst", pl_flag = False, 
-  nx=300, sl_sg = slice(50,100), crnt=.1, dt=0.4, nt=51, outfreq=1500,
+         nx=300, sl_sg = slice(50,100), crnt=.1, dt=0.4, nt=51,
+         outfreq=50, it_output_l=[],
   aerosol={
     "meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6, 
     # ammonium sulphate aerosol parameter:
@@ -264,7 +266,8 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
         assert(False)
     
     if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_init.pdf", time="init") 
-    saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_init.txt")
+    saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_C"+str(crnt)+"_data_init.txt")
+    if setup != "slow_act": sl_act_it=0
     for it in range(nt+sl_act_it):
         print "it", it
         print "testowa min, max przed adv", state["testowa"].min(), state["testowa"].max()
@@ -316,15 +319,15 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
         #pdb.set_trace()
         #if setup == "wh": wh.rho_adjust(state, nx)
         calc_S(state["S"], state["Temp"], state["rho_d"], state["th_d"], state["rv"]) 
-                
+
         print "testowa po it = ", it
-        if it % outfreq == 0 or it in [ 100, 110, 150]:#[ 100, 300, 900, 1500,  nt+sl_act_it-1]:
+        if (it+1) % outfreq == 0 or it in it_output_l:
             #if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
              # time=str(int(it*dt))+"s")
             if pl_flag: plotting(dic_var, figname=scheme+"5sst_"+apr+"_"+setup+"_"+str(dt)+"_plot_"+str(int(it*dt))+"s_ylim.pdf",
                      time=str(int(it*dt))+"s", )#ylim_dic={"S":[-0.005, 0.015]})#, "nc":[5.e8, 6.e8], "rv":[0.0108,0.0112], "rc":[0.00095, 0.0011]} )
-            if it == 550:#nt-1:
-                saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
+            #if it == nt-1:
+            saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_C"+str(crnt)+"_data_"+str(int((it+1)*dt))+"s.txt")
 
 
 if __name__ == '__main__':
@@ -336,4 +339,4 @@ if __name__ == '__main__':
     #main("2m", apr="S_adv", pl_flag=True)
     #main("sd", apr="S_adv", pl_flag=True)
     #main("2m", apr="S_adv_adj", pl_flag=True)
-    main("2m", apr="trad", pl_flag=True)#, setup = "slow_act")
+    main("sd", apr="trad", pl_flag=True)#, setup = "slow_act")
