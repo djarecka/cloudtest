@@ -29,20 +29,16 @@ Dt, Nt, It_output_l, Nx, Dx, Sl_sg = 0.2, 51, [50], 300, 2, slice(50,100)
     "sl_sg":Sl_sg, "crnt":.2, "dt":Dt, "nt":Nt, "it_output_l":It_output_l, "aerosol":Aerosol}
     
   ])
-def test_data_compare(arg, eps = 0.1):
+def test_data_compare(arg, eps = 0.05):
     filename = arg["scheme"]+"_"+arg["apr"]+"_"+arg["setup"]+"_C"+str(arg["crnt"])+"_data_"+"10s.txt"
 
     ah.main(**arg)
-    #ss = oah.Superdroplet(**arg)
-    #ss.all_sym()
-
     
     f_test = open(filename)
     data_test = json.load(f_test)
 
     f_ref = open("ref_data/"+filename)
     data_ref = json.load(f_ref)
-   
 
     for key in data_ref:
         assert np.isclose(np.array(data_test[key]), np.array(data_ref[key]), atol=0, rtol=eps).all()
@@ -59,14 +55,11 @@ def test_data_compare(arg, eps = 0.1):
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"trad", "C":.2, "dt":Dt, "time_adv_tot":Nt*Dt,
      "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
      "test":False, "it_output_l":It_output_l, "dirname_pre":"pytest"},
-    #TODO: dlaczego sa takie roznice na lewym brzegu w nc??
-    pytest.mark.xfail(
-        {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"S_adv", "C":.2, "dt":Dt, "time_adv_tot":Nt*Dt,
-         "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
-         "test":False, "it_output_l":It_output_l, "dirname_pre":"pytest"})
-    
+    {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"S_adv", "C":.2, "dt":Dt, "time_adv_tot":Nt*Dt,
+     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
+     "test":False, "it_output_l":It_output_l, "dirname_pre":"pytest"}
 ])
-def test_data_compare_oop(arg, eps = 0.1):
+def test_data_compare_oop(arg, eps = 0.05):
     filename_ref = arg["scheme"]+"_"+arg["apr"]+"_"+arg["setup"]+"_C"+str(arg["C"])+"_data_"+str(int((Nt-1)*Dt))+"s.txt"
         
     dir_name = "output/pytest_scheme=sd_conc="+str(int(Aerosol["sd_conc"]))+"_setup="+arg["setup"]+"_apr="+arg["apr"]+"_dt="+str(Dt)+"_dx="+str(Dx)+"_C="+str(arg["C"]) + "_ntot="+str(int(Aerosol["n_tot"]/1.e6))

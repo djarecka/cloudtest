@@ -106,7 +106,7 @@ def libcl_spdr_init(rho_d, th_d, rv, C, dt, aerosol, dx=2): #TODO dx
 
     opts_init.coal_switch = opts_init.sedi_switch = False
     
-    opts_init.sstp_cond = 5
+    opts_init.sstp_cond = 1
     micro = libcl.lgrngn.factory(libcl.lgrngn.backend_t.serial, opts_init)
 
     C_arr = np.ones(rv.shape[0]+1) * C
@@ -282,7 +282,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
             
             if apr in ["S_adv", "S_adv_adj"]: rv2absS(state["del_S"], state["rho_d"], state["th_d"], state["rv"])
             for var in var_adv:
-                libmpdata.mpdata(state[var], crnt, 1);
+                libmpdata.mpdata(state[var], crnt, 1)
         print "testowa min, max po adv", state["testowa"].min(), state["testowa"].max()
         if setup == "wh": wh.rho_adjust(state, nx)
 
@@ -324,7 +324,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
         if (it+1) % outfreq == 0 or it in it_output_l:
             #if pl_flag: plotting(dic_var, figname=scheme+"_"+apr+"_"+setup+"_"+"plot_"+str(int(it*dt))+"s.pdf", 
              # time=str(int(it*dt))+"s")
-            if pl_flag: plotting(dic_var, figname=scheme+"5sst_"+apr+"_"+setup+"_"+str(dt)+"_plot_"+str(int(it*dt))+"s_ylim.pdf",
+            if pl_flag: plotting(dic_var, figname=scheme+"sst_"+apr+"_"+setup+"_"+str(dt)+"_plot_"+str(int(it*dt))+"s_ylim.pdf",
                      time=str(int(it*dt))+"s", )#ylim_dic={"S":[-0.005, 0.015]})#, "nc":[5.e8, 6.e8], "rv":[0.0108,0.0112], "rc":[0.00095, 0.0011]} )
             #if it == nt-1:
             saving_state(dic_var, filename=scheme+"_"+apr+"_"+setup+"_C"+str(crnt)+"_data_"+str(int((it+1)*dt))+"s.txt")
