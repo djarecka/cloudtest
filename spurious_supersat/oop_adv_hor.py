@@ -39,8 +39,7 @@ def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf", it0=0, it_step
         i+=1
     plt.savefig(figname)
     if show: plt.show()
-        
-
+    
 
 class Micro:
     def __init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test):
@@ -105,9 +104,11 @@ class Micro:
                                     
 
 class Superdroplet(Micro):
-    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, test=True, dirname_pre = "test", it_output_l = []):
-
-        dir_name = dirname_pre+"_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
+    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, sstp_cond=1, test=True, dirname_pre = "test", dirname=None, it_output_l = []):
+        if dirname:
+            dir_name = dirname
+        else:
+            dir_name = dirname_pre+"_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
         Micro.__init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test)
          
         #TODO czy to sie updatuje??/ nie jak jest n_intrp>1 - pomyslec!
@@ -138,7 +139,7 @@ class Superdroplet(Micro):
         
         self.opts_init.coal_switch = self.opts_init.sedi_switch = False
         
-        self.opts_init.sstp_cond = 1
+        self.opts_init.sstp_cond = sstp_cond
         self.micro = libcl.lgrngn.factory(libcl.lgrngn.backend_t.serial, self.opts_init)
 
         self.state_micro = {}
@@ -275,13 +276,13 @@ class Superdroplet(Micro):
     
 
 if __name__ == '__main__':
-    ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, time_adv_tot=101,
+    ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.5, dt=1., time_adv_tot=21,
                        aerosol={
                            "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                            "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
-                           "sd_conc":256 #TODO trzeba tu?
-                       }, sl_act_time=60, n_intrp=1, setup="slow_act", scheme="sd",
+                           "sd_conc":128 #TODO trzeba tu?
+                       }, sl_act_time=60, n_intrp=1, setup="rhoconst", scheme="sd",
                        test=False)
 
     ss.all_sym()
