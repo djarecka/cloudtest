@@ -14,6 +14,13 @@ install:
   - sudo apt-get install --no-install-recommends libnetcdfc7
   - sudo apt-get install --no-install-recommends gfortran libblitz0-dev cmake libboost-python-dev libthrust-dev libnetcdf-dev python-numpy python-cffi python-pytest
 
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then git clone --depth=1 https://github.com/boostorg/odeint.git; fi # get boost odeint > 1.58
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then sudo rm -f /usr/include/boost/numeric/odeint.hpp; fi
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then sudo rm -rf /usr/include/boost/numeric/odeint; fi
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then sudo ln -s `pwd`/odeint/include/boost/numeric/odeint.hpp /usr/include/boost/numeric/odeint.hpp; fi
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then sudo ln -s `pwd`/odeint/include/boost/numeric/odeint  /usr/include/boost/numeric/; fi
+
+
   # WRF
   - (cd /tmp; wget http://www2.mmm.ucar.edu/wrf/src/WRFV3.6.1.TAR.gz)
   - (cd /tmp; tar xvzf WRFV3.6.1.TAR.gz)
