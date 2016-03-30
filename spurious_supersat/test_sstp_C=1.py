@@ -19,10 +19,10 @@ Dt, Nt, It_output_l, Nx, Dx, Sl_sg = 0.2, 51, [20, 50], 300, 2, slice(50,100)
 
 @pytest.mark.parametrize("arg", [
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"trad", "C":1., "dt":Dt, "time_adv_tot":Nt*Dt,
-      "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
+      "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst",
      "test":False, "it_output_l":It_output_l, "sstp_cond":5},
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"S_adv", "C":1., "dt":Dt, "time_adv_tot":Nt*Dt,
-     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
+     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst",
      "test":False, "it_output_l":It_output_l, "sstp_cond":5},
 ])
 # checking if there are no oscilations in cloud water for courant=1
