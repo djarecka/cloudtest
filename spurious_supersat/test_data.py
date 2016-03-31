@@ -30,7 +30,7 @@ Dt, Nt, Nx, Dx, Sl_sg = 0.2, 51, 300, 2, slice(50,100)
     
   ])
 def test_data_compare(arg, eps = 0.05):
-    filename = arg["scheme"]+"_"+arg["apr"]+"_"+arg["setup"]+"_C"+str(arg["crnt"])+"_data_"+"10s.txt"
+    filename = "sd_"+arg["apr"]+"_"+arg["setup"]+"_C"+str(arg["crnt"])+"_data_"+"10s.txt"
 
     ah.main(**arg)
     
@@ -47,20 +47,20 @@ def test_data_compare(arg, eps = 0.05):
 
 @pytest.mark.parametrize("arg", [
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"trad", "C":1., "dt":Dt, "time_adv_tot":Nt*Dt,
-      "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
+      "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst",
      "test":False, "it_output_l":[Nt-1]},
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"S_adv", "C":1., "dt":Dt, "time_adv_tot":Nt*Dt,
-     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
+     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", 
      "test":False, "it_output_l":[Nt-1]},
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"trad", "C":.2, "dt":Dt, "time_adv_tot":Nt*Dt,
-     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
+     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst",
      "test":False, "it_output_l":[Nt-1]},
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"S_adv", "C":.2, "dt":Dt, "time_adv_tot":Nt*Dt,
-     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst", "scheme":"sd",
+     "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst",
      "test":False, "it_output_l":[Nt-1]}
 ])
 def test_data_compare_oop(tmpdir, arg, eps = 0.05):
-    filename_ref = arg["scheme"]+"_"+arg["apr"]+"_"+arg["setup"]+"_C"+str(arg["C"])+"_data_"+str(int((Nt-1)*Dt))+"s.txt"
+    filename_ref = "sd_"+arg["apr"]+"_"+arg["setup"]+"_C"+str(arg["C"])+"_data_"+str(int((Nt-1)*Dt))+"s.txt"
         
     filename=os.path.join(str(tmpdir), "it="+str(int((Nt-1)*Dt))+"s.txt")
     ss = oah.Superdroplet(dirname=str(tmpdir), **arg)

@@ -42,26 +42,32 @@ def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf", it0=0, it_step
     
 
 class Micro:
-    def __init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test):
+    def __init__(self, nx, dx, time_adv_tot, dt, C, aerosol, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme):
         self.nx = nx
         self.dx = dx
         self.nt = int(time_adv_tot/dt)
         self.dt = dt
-                                
+        self.C = C
+        self.aerosol = aerosol
+        
         self.sl_sg = sl_sg
         self.apr = apr
         self.scheme = scheme
         self.setup = setup
         if self.setup=="rhoconst":
+            self.sl_act_it = 0
             self.state, self.var_adv = dft.thermo_init(nx=self.nx, sl_sg=self.sl_sg,
                                                           scheme=self.scheme, apr=self.apr)
-        elif self.setup=="slow_act":            
+        elif self.setup=="slow_act":
+            self.sl_act_it = int(sl_act_time/self.dt)
             self.state, self.var_adv = sl_act.thermo_init(nx=self.nx, sl_sg=self.sl_sg,
                                                           scheme=self.scheme, apr=self.apr)
+        self.n_intrp = n_intrp
+        self.it_output = it_output_l
         self.test = test    
         if not self.test:
             if setup=="slow_act": dir_name += "_sl_act_time=" + str(sl_act_time) + "s"
-            if n_intrp>1: dir_name += "_nintrp=" + str(n_intrp)
+            if self.n_intrp>1: dir_name += "_nintrp=" + str(self.n_intrp)
             self.outputdir = os.path.join("output", dir_name)
             if os.path.exists(self.outputdir):
                 call(["rm", "-r", self.outputdir])
@@ -104,22 +110,16 @@ class Micro:
                                     
 
 class Superdroplet(Micro):
-    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, scheme="sd", setup="rhoconst", n_intrp=1, sstp_cond=1, test=True, dirname_pre = "test", dirname=None, it_output_l = []):
+    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, setup="rhoconst", n_intrp=1, sstp_cond=1, test=True, dirname_pre = "test", dirname=None, it_output_l = []):
         if dirname:
             dir_name = dirname
         else:
             dir_name = dirname_pre+"_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
-        Micro.__init__(self, nx, dx, time_adv_tot, dt, sl_sg, apr, setup, scheme, n_intrp, sl_act_time, dir_name, test)
+        #pdb.set_trace()
+        Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="sd")
          
         #TODO czy to sie updatuje??/ nie jak jest n_intrp>1 - pomyslec!
         self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
-        self.it_output = it_output_l
-        
-        self.aerosol = aerosol
-        self.n_intrp = n_intrp
-        if setup=="rhoconst": self.sl_act_it = 0
-        if setup=="slow_act": self.sl_act_it = int(sl_act_time/self.dt)
-        self.C = C
         
         self.opts_init = libcl.lgrngn.opts_init_t()
         self.opts_init.dt = dt
@@ -282,7 +282,7 @@ if __name__ == '__main__':
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                            "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                            "sd_conc":128 #TODO trzeba tu?
-                       }, sl_act_time=60, n_intrp=1, setup="rhoconst", scheme="sd",
-                       test=False)
+                       }, sl_act_time=60, n_intrp=1, setup="rhoconst",
+                       test=False, it_output_l=[5,10,20])
 
     ss.all_sym()
