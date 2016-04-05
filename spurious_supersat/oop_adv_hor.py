@@ -276,13 +276,13 @@ class Superdroplet(Micro):
     
 
 if __name__ == '__main__':
-    ss  = Superdroplet(nx=320, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.5, dt=1., time_adv_tot=21,
+    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=.2, dt=.1, time_adv_tot=76,
                        aerosol={
                            "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                            "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
-                           "sd_conc":128 #TODO trzeba tu?
-                       }, sl_act_time=60, n_intrp=1, setup="rhoconst",
-                       test=False, it_output_l=[5,10,20])
+                           "sd_conc":256 #TODO trzeba tu?
+                       }, sl_act_time=60, n_intrp=1, setup="slow_act",
+                       test=False, it_output_l=[600, 850, 851, 1100,1101, 1350, 1351,1700,1701])
 
     ss.all_sym()
