@@ -25,7 +25,6 @@ class Eul_2mom(Micro):
         #pdb.set_trace()
         Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="2m")
 
-        pdb.set_trace()
         self.opts = libcl.blk_2m.opts_t()
         self.opts.acti = self.opts.cond = True
         self.opts.acnv = self.opts.accr = self.opts.sedi = False
@@ -49,7 +48,9 @@ class Eul_2mom(Micro):
                         
         print "qc min, max przed mikro", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max przed mikro", self.state["nc"].min(), self.state["nc"].max()
-        pdb.set_trace()
+        for k in ("dot_th_d", "dot_rv", "dot_rc", "dot_nc", "dot_rr", "dot_nr"):
+            self.state_dot[k] *= 0.
+        #pdb.set_trace()
         libcl.blk_2m.rhs_cellwise(self.opts,
                                   self.state_dot["dot_th_d"], self.state_dot["dot_rv"],
                                   self.state_dot["dot_rc"], self.state_dot["dot_nc"],
@@ -57,7 +58,6 @@ class Eul_2mom(Micro):
                                   self.state["rho_d"], self.state["th_d"],
                                   self.state["rv"], self.state["rc"], self.state["nc"],
                                   self.state["rr"], self.state["nr"], self.dt)
-        pdb.set_trace()
         print "qc min, max po mikro", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max po mikro", self.state["nc"].min(), self.state["nc"].max()
                         
@@ -65,7 +65,7 @@ class Eul_2mom(Micro):
         for k in ("th_d", "rv", "rc", "nc", "rr", "nr"):
             self.state[k] += self.state_dot["dot_"+k] * self.dt
 
-        pdb.set_trace()
+        #pdb.set_trace()
         np.place(self.state["rc"], self.state["rc"]<0, 0)
         np.place(self.state["nc"], self.state["nc"]<0, 0)
         print "qc min, max po place", self.state["rc"].min(), self.state["rc"].max()
