@@ -236,7 +236,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
     "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
     "sd_conc":512 #TODO trzeba tu?
   },
-   sl_act_it = 900
+         RHenv=0.95, sl_act_it = 900
 ):
 
     if setup == "rhoconst":
@@ -246,7 +246,7 @@ def main(scheme, apr="trad", setup="rhoconst", pl_flag = False,
     elif setup =="wh_rhoconst":
         state, var_adv = wh_rho.thermo_init(nx, sl_sg, scheme, apr)
     elif setup =="slow_act":
-        state, var_adv = sl_act.thermo_init(nx, sl_sg, scheme, apr)
+        state, var_adv = sl_act.thermo_init(RHenv, nx, sl_sg, scheme, apr)
     else:
         assert(False)
 
@@ -339,4 +339,4 @@ if __name__ == '__main__':
     #main("2m", apr="S_adv", pl_flag=True)
     #main("sd", apr="S_adv", pl_flag=True)
     #main("2m", apr="S_adv_adj", pl_flag=True)
-    main("sd", apr="trad", pl_flag=True)#, setup = "slow_act")
+    main("sd", apr="trad", pl_flag=True, setup = "slow_act")
