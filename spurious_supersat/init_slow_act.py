@@ -9,7 +9,7 @@ import libcloudphxx as libcl
 import numpy as np
 import math
 
-def thermo_init(nx, sl_sg, scheme, apr):
+def thermo_init(RHenv, nx, sl_sg, scheme, apr):
     state = {}
     state["th_d"] = np.empty((nx,))
     state["rv"] = np.empty((nx,))
@@ -41,7 +41,7 @@ def thermo_init(nx, sl_sg, scheme, apr):
             nc_0 = 0
         else:
             th_0 =  302.8
-            RH_0    = 0.95
+            RH_0    = RHenv
             rc_0 = 0.
             nc_0 = 0
 
