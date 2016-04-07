@@ -183,7 +183,33 @@ class Superdroplet(Micro):
             for i in range(self.state["rv"].shape[0]):
                 self.state[var][i] = self.state_micro[var][i*self.n_intrp:(i+1)*self.n_intrp].mean()
         
+    def epsilon_adj(self): #TODO musze zrobic lepiej
+        L = 2.5e6 #TODO
+        #pdb.set_trace()
+        #self.state["eps"] = np.zeros(self.state["th_d"].shape)
+        for i in range(len(self.state["rho_d"])):
+            Temp = libcl.common.T(self.state["th_d"][i], self.state["rho_d"][i])
+            p = libcl.common.p(self.state["rho_d"][i], self.state["rv"][i], Temp)
+            pvs =  libcl.common.p_vs(Temp)
+            rvs = pvs / (self.state["rho_d"][i] * libcl.common.R_v * Temp)
+            drs_dT = L * rvs / (self.state["rv"][i] * Temp**2)
+            Gamma = 1  + drs_dT * L / libcl.common.c_pd
+            self.state["eps"][i] = 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
+            #TODO czy to tu??
+            #if self.state["eps"][i]!=0:pdb.set_trace()
+            self.state["rv"][i] -= self.state["eps"][i]
+            #if self.state["eps"][i]!=0:pdb.set_trace()
+            ##rc[i] += epsilon
+            th = libcl.common.th_dry2std(self.state["th_d"][i], self.state["rv"][i])
+            th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * self.state["eps"][i]
+            self.state["th_d"][i] = libcl.common.th_std2dry(th, self.state["rv"][i])
 
+        self.micro.step_rc_adjust(self.state["eps"]) #TODO
+        # cloud water mixing ratio [kg/kg] (same size threshold as above)
+        self.micro.diag_wet_mom(3)
+        rho_H2O = 1e3
+        self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())
+                                                
             
     def micro_step(self, adve=True, cond=True):
         libopts = libcl.lgrngn.opts_t()
@@ -244,11 +270,19 @@ class Superdroplet(Micro):
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step(adve=False)
                 if self.n_intrp > 1: self.interp_micro2adv()
-                if it==self.sl_act_it: all_water_i = self.state["rv"].sum() + self.state["rc"].sum()
+                if it==self.sl_act_it-1: all_water_i = self.state["rv"].sum() + self.state["rc"].sum()
             else:
                 if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
                 self.advection()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
+                #pdb.set_trace()
+                print "przed adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
+                if self.apr in ["S_adv_adj"]:
+                    #pdb.set_trace()
+                    self.epsilon_adj()
+                    #pdb.set_trace()
+                print "po adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
+
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step()
                 if self.n_intrp > 1: self.interp_micro2adv()
@@ -271,7 +305,7 @@ class Superdroplet(Micro):
         #pdb.set_trace()
     
         print "Nc_max", max_state["nc"]
-        #TODOprint "all_water, init, final, rel_diff", all_water_i, all_water_f, (all_water_i-all_water_f)/all_water_i
+        print "all_water, init, final, rel_diff", all_water_i, all_water_f, (all_water_i-all_water_f)/all_water_i
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max.pdf"))
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_fullstep.pdf"), it0=1, it_step=int(1/self.C))
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_halfstep.pdf"), it0=1+int(0.5/self.C), it_step=int(1/self.C), show=False)
@@ -279,7 +313,7 @@ class Superdroplet(Micro):
     
 
 if __name__ == '__main__':
-    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=.2, dt=.1, time_adv_tot=76,
+    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv_adj", C=.2, dt=.1, time_adv_tot=76,
                        aerosol={
                            "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
