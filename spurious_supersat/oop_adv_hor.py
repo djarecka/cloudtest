@@ -194,8 +194,9 @@ class Superdroplet(Micro):
             rvs = pvs / (self.state["rho_d"][i] * libcl.common.R_v * Temp)
             drs_dT = L * rvs / (libcl.common.R_v * Temp**2)
             Gamma = 1  + drs_dT * L / libcl.common.c_pd
-            if i==160: pdb.set_trace()
-            self.state["eps"][i] = 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
+            #if i==160: pdb.set_trace()
+            print "UWAGA: EPS ZMNIEJSZONY"
+            self.state["eps"][i] = 1.e-8 * 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
             #TODO czy to tu??
             #if self.state["eps"][i]!=0:pdb.set_trace()
             self.state["rv"][i] -= self.state["eps"][i]
@@ -204,13 +205,15 @@ class Superdroplet(Micro):
             th = libcl.common.th_dry2std(self.state["th_d"][i], self.state["rv"][i])
             th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * self.state["eps"][i]
             self.state["th_d"][i] = libcl.common.th_std2dry(th, self.state["rv"][i])
-            if i==160: pdb.set_trace()
+            #if i==160: pdb.set_trace()
+        pdb.set_trace()
         self.micro.step_rc_adjust(self.state["eps"]) #TODO
+        #pdb.set_trace()
         # cloud water mixing ratio [kg/kg] (same size threshold as above)
         self.micro.diag_wet_mom(3)
         rho_H2O = 1e3
         self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())
-                                                
+        pdb.set_trace()
             
     def micro_step(self, adve=True, cond=True):
         libopts = libcl.lgrngn.opts_t()
@@ -276,18 +279,18 @@ class Superdroplet(Micro):
                 if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
                 self.advection()
                 if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
-                #pdb.set_trace()
+
+                if self.n_intrp > 1: self.interp_adv2micro()
+                self.micro_step()
+                if self.n_intrp > 1: self.interp_micro2adv()
+                if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
                 print "przed adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
                 if self.apr in ["S_adv_adj"]:
                     #pdb.set_trace()
                     self.epsilon_adj()
                     #pdb.set_trace()
                 print "po adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
-
-                if self.n_intrp > 1: self.interp_adv2micro()
-                self.micro_step()
-                if self.n_intrp > 1: self.interp_micro2adv()
-                if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
+                                                                                                            
                                 
                 #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
             self.calc_S()
@@ -320,7 +323,7 @@ if __name__ == '__main__':
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                            "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                            "sd_conc":256 #TODO trzeba tu?
-                       }, RHenv=.95, sl_act_time=60, n_intrp=1, setup="slow_act",
+                       }, RHenv=.95, sl_act_time=6, n_intrp=1, setup="slow_act",
                        test=False, it_output_l=[600, 850, 851, 1100,1101, 1350, 1351,1700,1701])
 
     ss.all_sym()
