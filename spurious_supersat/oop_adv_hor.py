@@ -192,8 +192,9 @@ class Superdroplet(Micro):
             p = libcl.common.p(self.state["rho_d"][i], self.state["rv"][i], Temp)
             pvs =  libcl.common.p_vs(Temp)
             rvs = pvs / (self.state["rho_d"][i] * libcl.common.R_v * Temp)
-            drs_dT = L * rvs / (self.state["rv"][i] * Temp**2)
+            drs_dT = L * rvs / (libcl.common.R_v * Temp**2)
             Gamma = 1  + drs_dT * L / libcl.common.c_pd
+            if i==160: pdb.set_trace()
             self.state["eps"][i] = 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
             #TODO czy to tu??
             #if self.state["eps"][i]!=0:pdb.set_trace()
@@ -203,7 +204,7 @@ class Superdroplet(Micro):
             th = libcl.common.th_dry2std(self.state["th_d"][i], self.state["rv"][i])
             th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * self.state["eps"][i]
             self.state["th_d"][i] = libcl.common.th_std2dry(th, self.state["rv"][i])
-
+            if i==160: pdb.set_trace()
         self.micro.step_rc_adjust(self.state["eps"]) #TODO
         # cloud water mixing ratio [kg/kg] (same size threshold as above)
         self.micro.diag_wet_mom(3)
