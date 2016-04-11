@@ -17,13 +17,13 @@ from oop_adv_hor import Micro
 import pdb
 
 class Eul_2mom(Micro):
-    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, setup="rhoconst", n_intrp=1, test=True, dirname_pre = "test", dirname=None, it_output_l=[]):
+    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, RHenv, setup="rhoconst", n_intrp=1, test=True, dirname_pre = "test", dirname=None, it_output_l=[]):
         if dirname:
             dir_name = dirname
         else:
             dir_name = dirname_pre+"_scheme=2mom_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
         #pdb.set_trace()
-        Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="2m")
+        Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, RHenv, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="2m")
 
         self.opts = libcl.blk_2m.opts_t()
         self.opts.acti = self.opts.cond = True
@@ -40,12 +40,6 @@ class Eul_2mom(Micro):
                 
         
     def micro_step(self):
-#        cos = np.zeros(self.nx)
-#        shp = self.nx
-#        dot_th, dot_rv = np.zeros(shp), np.zeros(shp)
-#        dot_rc, dot_nc = np.zeros(shp), np.zeros(shp)
-#        dot_rr, dot_nr = np.zeros(shp), np.zeros(shp)
-                        
         print "qc min, max przed mikro", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max przed mikro", self.state["nc"].min(), self.state["nc"].max()
         for k in ("dot_th_d", "dot_rv", "dot_rc", "dot_nc", "dot_rr", "dot_nr"):
@@ -125,7 +119,7 @@ if __name__ == '__main__':
                               "chem_b":.505, 
                               "kappa":.61,    
                           },
-                          sl_act_time=60, n_intrp=1, setup="rhoconst",
+                          RHenv=.95, sl_act_time=60, n_intrp=1, setup="rhoconst",
                           test=False, it_output_l=[5,10,20])
     
     micro_2mom.all_sym()
