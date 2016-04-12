@@ -35,7 +35,7 @@ def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
         tpl[i%nrow,i/nrow].plot(v)
         i+=1
     plt.savefig(figname)
-    #plt.show()
+    plt.show()
 
 def saving_state(dic, filename):
     dic_list = {}
@@ -147,7 +147,3 @@ class Micro:
             th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * self.state["eps"][i]
             self.state["th_d"][i] = libcl.common.th_std2dry(th, self.state["rv"][i])
         self.rc_adjust()
-        # cloud water mixing ratio [kg/kg] (same size threshold as above)
-        self.micro.diag_wet_mom(3)
-        rho_H2O = 1e3
-        self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())

@@ -113,6 +113,10 @@ class Superdroplet(Micro):
 
     def rc_adjust(self):
         self.micro.step_rc_adjust(self.state["eps"]) #TODO 
+        # cloud water mixing ratio [kg/kg] (same size threshold as above)
+        self.micro.diag_wet_mom(3)
+        rho_H2O = 1e3
+        self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())
         
     def slow_act(self):
         if self.setup=="slow_act":

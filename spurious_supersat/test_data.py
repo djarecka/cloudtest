@@ -44,7 +44,7 @@ def test_data_compare(arg, eps = 0.05):
         assert np.isclose(np.array(data_test[key]), np.array(data_ref[key]), atol=0, rtol=eps).all()
 
 
-
+#TODO zmienic czaami na s_act_time, setup inny
 @pytest.mark.parametrize("arg", [
     {"nx":Nx, "dx":Dx, "sl_sg":Sl_sg, "apr":"trad", "C":1., "dt":Dt, "time_adv_tot":Nt*Dt,
       "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst",
