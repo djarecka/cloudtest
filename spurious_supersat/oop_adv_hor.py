@@ -129,5 +129,25 @@ class Micro:
         for var in self.var_adv:
             libmpdata.mpdata(self.state[var], self.C, 1);
                                     
-
-
+    def epsilon_adj(self): #TODO musze zrobic lepiej
+        L = 2.5e6 #TODO
+        for i in range(len(self.state["rho_d"])):
+            Temp = libcl.common.T(self.state["th_d"][i], self.state["rho_d"][i])
+            p = libcl.common.p(self.state["rho_d"][i], self.state["rv"][i], Temp)
+            pvs =  libcl.common.p_vs(Temp)
+            rvs = pvs / (self.state["rho_d"][i] * libcl.common.R_v * Temp)
+            drs_dT = L * rvs / (libcl.common.R_v * Temp**2)
+            Gamma = 1  + drs_dT * L / libcl.common.c_pd
+            print "UWAGA: EPS ZMNIEJSZONY"
+            self.state["eps"][i] = 1.e-8 * 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
+            #TODO czy to tu??
+            self.state["rv"][i] -= self.state["eps"][i]
+            ##rc[i] += epsilon
+            th = libcl.common.th_dry2std(self.state["th_d"][i], self.state["rv"][i])
+            th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * self.state["eps"][i]
+            self.state["th_d"][i] = libcl.common.th_std2dry(th, self.state["rv"][i])
+        self.rc_adjust()
+        # cloud water mixing ratio [kg/kg] (same size threshold as above)
+        self.micro.diag_wet_mom(3)
+        rho_H2O = 1e3
+        self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())

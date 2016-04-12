@@ -82,38 +82,6 @@ class Superdroplet(Micro):
         for var in ["rv", "th_d", "rho_d", "sd", "na", "nc", "rc"]:
             for i in range(self.state["rv"].shape[0]):
                 self.state[var][i] = self.state_micro[var][i*self.n_intrp:(i+1)*self.n_intrp].mean()
-        
-    def epsilon_adj(self): #TODO musze zrobic lepiej
-        L = 2.5e6 #TODO
-        #pdb.set_trace()
-        #self.state["eps"] = np.zeros(self.state["th_d"].shape)
-        for i in range(len(self.state["rho_d"])):
-            Temp = libcl.common.T(self.state["th_d"][i], self.state["rho_d"][i])
-            p = libcl.common.p(self.state["rho_d"][i], self.state["rv"][i], Temp)
-            pvs =  libcl.common.p_vs(Temp)
-            rvs = pvs / (self.state["rho_d"][i] * libcl.common.R_v * Temp)
-            drs_dT = L * rvs / (libcl.common.R_v * Temp**2)
-            Gamma = 1  + drs_dT * L / libcl.common.c_pd
-            #if i==160: pdb.set_trace()
-            print "UWAGA: EPS ZMNIEJSZONY"
-            self.state["eps"][i] = 1.e-8 * 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
-            #TODO czy to tu??
-            #if self.state["eps"][i]!=0:pdb.set_trace()
-            self.state["rv"][i] -= self.state["eps"][i]
-            #if self.state["eps"][i]!=0:pdb.set_trace()
-            ##rc[i] += epsilon
-            th = libcl.common.th_dry2std(self.state["th_d"][i], self.state["rv"][i])
-            th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * self.state["eps"][i]
-            self.state["th_d"][i] = libcl.common.th_std2dry(th, self.state["rv"][i])
-            #if i==160: pdb.set_trace()
-        #pdb.set_trace()
-        self.micro.step_rc_adjust(self.state["eps"]) #TODO
-        #pdb.set_trace()
-        # cloud water mixing ratio [kg/kg] (same size threshold as above)
-        self.micro.diag_wet_mom(3)
-        rho_H2O = 1e3
-        self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())
-        #pdb.set_trace()
             
     def micro_step(self, adve=True, cond=True):
         libopts = libcl.lgrngn.opts_t()
@@ -143,6 +111,9 @@ class Superdroplet(Micro):
         rho_H2O = 1e3
         self.state_micro["rc"][:] = 4./3 * math.pi * rho_H2O * np.frombuffer(self.micro.outbuf())
 
+    def rc_adjust(self):
+        self.micro.step_rc_adjust(self.state["eps"]) #TODO 
+        
     def slow_act(self):
         if self.setup=="slow_act":
             self.state["rv"][self.sl_sg] += self.state["rv_sl_act"] / self.sl_act_it
