@@ -12,8 +12,6 @@ import json
 import os
 from subprocess import call
 
-from adv_hor import plotting, saving_state
-
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -25,7 +23,27 @@ import init_WH_rhoconst as wh_rho
 import init_slow_act as sl_act
 import init_default as dft
 
-#TODO przeniesc
+#TODO przeniesc?
+def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
+    nrow = (len(dct)+1)/2
+    fig, tpl = plt.subplots(nrows=nrow, ncols=2, figsize=(10,8.5))
+    i=0
+    for k,v in dct.iteritems():
+        tpl[i%nrow,i/nrow].set_title(k+", " + time)
+        if k in ylim_dic.keys():
+            tpl[i%nrow,i/nrow].set_ylim(ylim_dic[k])
+        tpl[i%nrow,i/nrow].plot(v)
+        i+=1
+    plt.savefig(figname)
+    #plt.show()
+
+def saving_state(dic, filename):
+    dic_list = {}
+    for key, value in dic.iteritems():
+        dic_list[key] = value.tolist()
+    f_w = open(filename, 'w')
+    json.dump(dic_list, f_w)
+
 def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf", it0=0, it_step=1, show=False):
     nrow = (len(dct_max))
     fig, tpl = plt.subplots(nrows=nrow, ncols=1, figsize=(10,8.5))

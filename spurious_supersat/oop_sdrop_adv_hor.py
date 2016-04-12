@@ -10,8 +10,7 @@ import math
 import json
 import os
 
-from adv_hor import plotting, saving_state
-from oop_adv_hor import Micro, plotting_timeevol 
+from oop_adv_hor import Micro, plotting_timeevol, plotting, saving_state 
 
 class Superdroplet(Micro):
     def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, RHenv, setup="rhoconst", n_intrp=1, sstp_cond=1, test=True, dirname_pre = "test", dirname=None, it_output_l = []):
@@ -226,6 +225,7 @@ if __name__ == '__main__':
                            "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                            "sd_conc":256 #TODO trzeba tu?
                        }, RHenv=.95, sl_act_time=6, n_intrp=1, setup="slow_act",
-                       test=False, it_output_l=[600, 850, 851, 1100,1101, 1350, 1351,1700,1701])
+                       test=False, it_output_l=[50, 100, 150, 200])
+                           #600, 850, 851, 1100,1101, 1350, 1351,1700,1701])
 
     ss.all_sym()

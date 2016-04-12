@@ -10,9 +10,8 @@ from subprocess import call
 import init_WH_rhoconst as wh_rho
 import init_slow_act as sl_act
 import init_default as dft
-from adv_hor import plotting, saving_state
 
-from oop_adv_hor import Micro
+from oop_adv_hor import Micro, plotting, saving_state
 
 import pdb
 
@@ -112,15 +111,15 @@ class Eul_2mom(Micro):
 
 
 if __name__ == '__main__':
-    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="trad",
-                          C=.1, dt=.4, time_adv_tot=21,
+    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv",
+                          C=.2, dt=.1, time_adv_tot=21,
                           aerosol={
                               "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                               "chem_b":.505, 
                               "kappa":.61,    
                           },
                           RHenv=.95, sl_act_time=60, n_intrp=1, setup="rhoconst",
-                          test=False, it_output_l=[5,10,20])
+                          test=False, it_output_l=[50,100,200])
     
     micro_2mom.all_sym()
                                                                                      
