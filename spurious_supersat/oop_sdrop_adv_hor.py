@@ -199,7 +199,7 @@ if __name__ == '__main__':
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                            "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                            "sd_conc":256 #TODO trzeba tu?
-                       }, RHenv=.95, sl_act_time=6, n_intrp=1, setup="slow_act",
+                       }, RHenv=.95, sl_act_time=6, n_intrp=1, setup="rhoconst",
                        test=False, it_output_l=[50, 100, 150, 200])
                            #600, 850, 851, 1100,1101, 1350, 1351,1700,1701])
 

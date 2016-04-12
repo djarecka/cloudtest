@@ -64,7 +64,9 @@ class Eul_2mom(Micro):
         print "qc min, max po place", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max po place", self.state["nc"].min(), self.state["nc"].max()
                         
-
+    def rc_adjust(self):
+        self.state["rc"] += self.state["eps"]
+        
     def all_sym(self):
         self.calc_S()
         print "po S", self.state["S"].max()
@@ -94,6 +96,12 @@ class Eul_2mom(Micro):
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step()
                 if self.n_intrp > 1: self.interp_micro2adv()
+
+                print "przed adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
+                if self.apr in ["S_adv_adj"]:
+                    self.epsilon_adj()
+                print "po adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
+                                
                 if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
                     
             self.calc_S()
@@ -111,7 +119,7 @@ class Eul_2mom(Micro):
 
 
 if __name__ == '__main__':
-    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv",
+    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv_adj",
                           C=.2, dt=.1, time_adv_tot=21,
                           aerosol={
                               "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
