@@ -26,6 +26,8 @@ def thermo_init(nx, sl_sg, scheme, apr):
     state["del_S"] = np.empty((nx,))
     state["Temp"] = np.empty((nx,))
 
+    if apr in ["S_adv_adj"]: state["eps"] = np.zeros((nx,))
+    
     if apr == "trad":
         var_adv = ["th_d", "rv", "testowa"]
     elif apr in ["S_adv", "S_adv_adj"]:
