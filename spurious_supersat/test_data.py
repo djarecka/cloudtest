@@ -7,7 +7,7 @@ import pdb
 import json
 
 import adv_hor as ah
-import oop_adv_hor as oah
+from oop_sdrop_adv_hor import Superdroplet
 
 Aerosol={"meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6,
          # ammonium sulphate aerosol parameter:
@@ -63,7 +63,7 @@ def test_data_compare_oop(tmpdir, arg, eps = 0.05):
     filename_ref = "sd_"+arg["apr"]+"_"+arg["setup"]+"_C"+str(arg["C"])+"_data_"+str(int((Nt-1)*Dt))+"s.txt"
         
     filename=os.path.join(str(tmpdir), "it="+str(int((Nt-1)*Dt))+"s.txt")
-    ss = oah.Superdroplet(dirname=str(tmpdir), **arg)
+    ss = Superdroplet(dirname=str(tmpdir), **arg)
     ss.all_sym()
                     
     f_test = open(filename)
