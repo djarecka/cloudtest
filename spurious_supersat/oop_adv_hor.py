@@ -139,7 +139,12 @@ class Micro:
             drs_dT = L * rvs / (libcl.common.R_v * Temp**2)
             Gamma = 1  + drs_dT * L / libcl.common.c_pd
             print "UWAGA: EPS ZMNIEJSZONY"
-            self.state["eps"][i] = 1.e-8 * 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
+            eps = 1.e0 * 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
+            #eps = max(eps, -self.state["rc"][i])
+            #if self.state["rv"][i] / rvs < 1:
+            #    eps = min(0., eps)
+            self.state["eps"][i] = eps
+            if self.state["rc"][i]>0: pdb.set_trace()
             #TODO czy to tu??
             self.state["rv"][i] -= self.state["eps"][i]
             ##rc[i] += epsilon

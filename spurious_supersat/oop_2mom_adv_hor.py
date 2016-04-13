@@ -66,7 +66,7 @@ class Eul_2mom(Micro):
                         
     def rc_adjust(self):
         self.state["rc"] += self.state["eps"]
-        
+                
     def all_sym(self):
         self.calc_S()
         print "po S", self.state["S"].max()
@@ -120,14 +120,14 @@ class Eul_2mom(Micro):
 
 if __name__ == '__main__':
     micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv_adj",
-                          C=.2, dt=.1, time_adv_tot=21,
+                          C=.2, dt=.1, time_adv_tot=6,
                           aerosol={
                               "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                               "chem_b":.505, 
                               "kappa":.61,    
                           },
                           RHenv=.95, sl_act_time=60, n_intrp=1, setup="rhoconst",
-                          test=False, it_output_l=[50,100,200])
+                          test=False, it_output_l=[1,2,10, 50])
     
     micro_2mom.all_sym()
                                                                                      
