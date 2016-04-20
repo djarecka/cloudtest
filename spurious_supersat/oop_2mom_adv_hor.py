@@ -112,7 +112,7 @@ class Eul_2mom(Micro):
 
             if it in it_output:
                 #pdb.set_trace()
-                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', "nc", "th_d", "S"))
+                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', "nc", "th_d", "S", "Temp"))
                 plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str((it+1)*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
                 if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it+1-self.sl_act_it)))+"s.txt"))
 
@@ -120,14 +120,14 @@ class Eul_2mom(Micro):
 
 if __name__ == '__main__':
     micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv_adj",
-                          C=.2, dt=.1, time_adv_tot=6,
+                          C=.2, dt=.1, time_adv_tot=26,
                           aerosol={
                               "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                               "chem_b":.505, 
                               "kappa":.61,    
                           },
-                          RHenv=.95, sl_act_time=60, n_intrp=1, setup="rhoconst",
-                          test=False, it_output_l=[1,2,10, 50])
+                          RHenv=.95, sl_act_time=60, n_intrp=1, setup="wh_rhoconst",
+                          test=False, it_output_l=[10, 50, 250])
     
     micro_2mom.all_sym()
                                                                                      
