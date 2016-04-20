@@ -6,7 +6,7 @@ import pytest
 import pdb
 import json
 
-import oop_adv_hor as oah
+from oop_sdrop_adv_hor import Superdroplet
 
 Aerosol={"meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6,
          # ammonium sulphate aerosol parameter:
@@ -27,7 +27,7 @@ Dt, Nt, It_output_l, Nx, Dx, Sl_sg = 0.2, 51, [20, 50], 300, 2, slice(50,100)
 ])
 # checking if there are no oscilations in cloud water for courant=1
 def test_sstp_courant1(tmpdir, arg, eps = 0.01):
-    ss = oah.Superdroplet(dirname=str(tmpdir), **arg)
+    ss = Superdroplet(dirname=str(tmpdir), **arg)
     ss.all_sym()
 
     for filename in os.listdir(str(tmpdir)):

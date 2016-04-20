@@ -10,20 +10,19 @@ from subprocess import call
 import init_WH_rhoconst as wh_rho
 import init_slow_act as sl_act
 import init_default as dft
-from adv_hor import plotting, saving_state
 
-from oop_adv_hor import Micro
+from oop_adv_hor import Micro, plotting, saving_state
 
 import pdb
 
 class Eul_2mom(Micro):
-    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, setup="rhoconst", n_intrp=1, test=True, dirname_pre = "test", dirname=None, it_output_l=[]):
+    def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, RHenv, setup="rhoconst", n_intrp=1, test=True, dirname_pre = "test", dirname=None, it_output_l=[]):
         if dirname:
             dir_name = dirname
         else:
             dir_name = dirname_pre+"_scheme=2mom_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
         #pdb.set_trace()
-        Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="2m")
+        Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, RHenv, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="2m")
 
         self.opts = libcl.blk_2m.opts_t()
         self.opts.acti = self.opts.cond = True
@@ -40,12 +39,6 @@ class Eul_2mom(Micro):
                 
         
     def micro_step(self):
-#        cos = np.zeros(self.nx)
-#        shp = self.nx
-#        dot_th, dot_rv = np.zeros(shp), np.zeros(shp)
-#        dot_rc, dot_nc = np.zeros(shp), np.zeros(shp)
-#        dot_rr, dot_nr = np.zeros(shp), np.zeros(shp)
-                        
         print "qc min, max przed mikro", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max przed mikro", self.state["nc"].min(), self.state["nc"].max()
         for k in ("dot_th_d", "dot_rv", "dot_rc", "dot_nc", "dot_rr", "dot_nr"):
@@ -71,7 +64,9 @@ class Eul_2mom(Micro):
         print "qc min, max po place", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max po place", self.state["nc"].min(), self.state["nc"].max()
                         
-
+    def rc_adjust(self):
+        self.state["rc"] += self.state["eps"]
+                
     def all_sym(self):
         self.calc_S()
         print "po S", self.state["S"].max()
@@ -101,6 +96,12 @@ class Eul_2mom(Micro):
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step()
                 if self.n_intrp > 1: self.interp_micro2adv()
+
+                print "przed adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
+                if self.apr in ["S_adv_adj"]:
+                    self.epsilon_adj()
+                print "po adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
+                                
                 if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
                     
             self.calc_S()
@@ -111,22 +112,22 @@ class Eul_2mom(Micro):
 
             if it in it_output:
                 #pdb.set_trace()
-                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', "nc", "th_d", "S"))
+                self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', "nc", "th_d", "S", "Temp"))
                 plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str((it+1)*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
                 if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it+1-self.sl_act_it)))+"s.txt"))
 
 
 
 if __name__ == '__main__':
-    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="trad",
-                          C=.1, dt=.4, time_adv_tot=21,
+    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv_adj",
+                          C=.2, dt=.1, time_adv_tot=26,
                           aerosol={
                               "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                               "chem_b":.505, 
                               "kappa":.61,    
                           },
-                          sl_act_time=60, n_intrp=1, setup="rhoconst",
-                          test=False, it_output_l=[5,10,20])
+                          RHenv=.95, sl_act_time=60, n_intrp=1, setup="wh_rhoconst",
+                          test=False, it_output_l=[10, 50, 250])
     
     micro_2mom.all_sym()
                                                                                      

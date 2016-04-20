@@ -22,7 +22,8 @@ def thermo_init(RHenv, nx, sl_sg, scheme, apr):
     state["del_S"] = np.empty((nx,))
     state["Temp"]  = np.empty((nx,))
     state["nc"] = np.zeros((nx,))
-
+    if apr in ["S_adv_adj"]: state["eps"] = np.zeros((nx,))
+    
     #daje podobne ustawienia jak WH, ale zakladam stale rho_d
     # przyjmuje, ze poczatkowo podane sa th jest bliska thd
     # korzystam z cisnienia i wartosci temperatury w "suchej czesci"
