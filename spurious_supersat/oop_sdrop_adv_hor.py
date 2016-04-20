@@ -193,7 +193,7 @@ class Superdroplet(Micro):
     
 
 if __name__ == '__main__':
-    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv_adj", C=.2, dt=.1, time_adv_tot=16, #76,
+    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, time_adv_tot=16, #76,
                        aerosol={
                            "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)

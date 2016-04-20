@@ -68,12 +68,22 @@ class Micro:
         self.C = C
         self.aerosol = aerosol
         self.RHenv = RHenv
-        
         self.sl_sg = sl_sg
-        self.apr = apr
-        self.scheme = scheme
+
+        if apr in ["trad", "S_adv"]:
+            self.apr = apr
+        else:
+            if apr=="S_adv_adj":
+                raise Exception("the option does not work yet -- the microphysics should predicd f_sat and supersaturation should be updated before the adjustment")
+            else:
+                raise Exception("the non-existent apr has been chosen, try trad or S_adv")
+
+        if scheme in ["sd", "2mom"]: 
+            self.scheme = scheme
+        else:
+            raise Exception("the non-existent apr has been chosen, try sd or 2mom")
+                            
         self.setup = setup
-        
         if self.setup=="rhoconst":
             self.sl_act_it = 0
             self.state, self.var_adv = dft.thermo_init(nx=self.nx, sl_sg=self.sl_sg,
@@ -87,6 +97,9 @@ class Micro:
             self.state, self.var_adv = sl_act.thermo_init(RHenv=self.RHenv, nx=self.nx,
                                                           sl_sg=self.sl_sg,
                                                           scheme=self.scheme, apr=self.apr)
+        else:
+            raise Exception("the non-existent setup has been chosen, try rhoconst, wh_rhoconst or slow_act")
+            
         self.n_intrp = n_intrp
         self.it_output = it_output_l
         self.test = test    
@@ -142,13 +155,13 @@ class Micro:
             rvs = pvs / (self.state["rho_d"][i] * libcl.common.R_v * Temp)
             drs_dT = L * rvs / (libcl.common.R_v * Temp**2)
             Gamma = 1  + drs_dT * L / libcl.common.c_pd
-            print "UWAGA: EPS ZMNIEJSZONY"
-            eps = 1.e0 * 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
+            #print "UWAGA: EPS ZMNIEJSZONY"
+            eps = 1.*(self.state["rv"][i] - rvs - self.state["del_S"][i]) / Gamma
             #eps = max(eps, -self.state["rc"][i])
             #if self.state["rv"][i] / rvs < 1:
             #    eps = min(0., eps)
             self.state["eps"][i] = eps
-            if self.state["rc"][i]>0: pdb.set_trace()
+            #if self.state["rc"][i]>0: pdb.set_trace()
             #TODO czy to tu??
             self.state["rv"][i] -= self.state["eps"][i]
             ##rc[i] += epsilon
