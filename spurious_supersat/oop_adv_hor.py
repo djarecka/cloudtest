@@ -78,6 +78,10 @@ class Micro:
             self.sl_act_it = 0
             self.state, self.var_adv = dft.thermo_init(nx=self.nx, sl_sg=self.sl_sg,
                                                           scheme=self.scheme, apr=self.apr)
+        elif self.setup=="wh_rhoconst":
+            self.sl_act_it = 0
+            self.state, self.var_adv = wh_rho.thermo_init(nx=self.nx, sl_sg=self.sl_sg,
+                                                       scheme=self.scheme, apr=self.apr)
         elif self.setup=="slow_act":
             self.sl_act_it = int(sl_act_time/self.dt)
             self.state, self.var_adv = sl_act.thermo_init(RHenv=self.RHenv, nx=self.nx,
