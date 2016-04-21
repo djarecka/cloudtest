@@ -1,8 +1,9 @@
 import os
 from PyPDF2 import PdfFileReader, PdfFileMerger
 import numpy as np
-from oop_sdrop_adv_hor import Superdroplet
+import oop_adv_hor as oah
 
+# testing for interpolations
 
 Arg = {"nx":300, "dx":2, "sl_sg":slice(50,100), "C":.2, "dt":.1, "time_adv_tot":26,
        "aerosol":{"meanr":.02e-6, "gstdv":1.4, "n_tot":1e9, "chem_b":.505, "kappa":.61, "sd_conc":256},
@@ -17,7 +18,7 @@ def main(aproach):
     if Arg["n_intrp"]>1:
         dirname_full += "_nintrp=" + str(Arg["n_intrp"])
                                     
-    ss  = Superdroplet(apr=aproach, **Arg)
+    ss  = oah.Superdroplet(apr=aproach, **Arg)
     ss.all_sym()
 
     files_dir = dirname_full
