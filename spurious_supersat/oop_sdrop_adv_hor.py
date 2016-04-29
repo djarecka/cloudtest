@@ -151,48 +151,34 @@ class Superdroplet(Micro):
                 if self.n_intrp > 1: self.interp_micro2adv()
                 if it==self.sl_act_it-1: all_water_i = self.state["rv"].sum() + self.state["rc"].sum()
             else:
-                #pdb.set_trace()
-                #if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
-                #self.advection()
-                #if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
-                #pdb.set_trace()
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step()
                 if self.n_intrp > 1: self.interp_micro2adv()
-                #pdb.set_trace()
                 if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
                 print "przed adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
                 if self.apr in ["S_adv_adj"]:
-                    #pdb.set_trace()
                     self.epsilon_adj()
-                    #pdb.set_trace()
+
                 print "po adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
             #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
 
-                #pdb.set_trace()
-            #    if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
-            #    self.advection()
-            #    if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
-                #pdb.set_trace()
-                
+                if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
+                self.advection()
+                if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
+                                                            
 
             self.calc_S()
             
             for vv in ["S", "nc", "rc"]:
                 max_state[vv].append(self.state[vv].max())
                 meancl_state[vv].append(self.state[vv][np.where(self.state["rc"]>0)].mean())
-            #pdb.set_trace()
-            if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
-            self.advection()
-            if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
-                                                
             
             if it in it_output:
                 #pdb.set_trace()
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'sd', "na", "nc", "th_d", "S"))
                 plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str((it+1)*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
-                if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it+1-self.sl_act_it)))+"s.txt"))#scheme+"_"+apr+"_"+setup+"_"+"data_"+str(int(it*dt))+"s.txt")
-        #pdb.set_trace()
+                if not self.test:
+                    saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it+1-self.sl_act_it)))+"s.txt"))
     
         print "Nc_max", max_state["nc"]
 
@@ -204,14 +190,14 @@ class Superdroplet(Micro):
     
 
 if __name__ == '__main__':
-    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv", C=1., dt=.1, time_adv_tot=16, #76,
+    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="trad", C=.2, dt=.1, time_adv_tot=16, #76,
                        aerosol={
                            "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
                            "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
                            "sd_conc":256 #TODO trzeba tu?
-                       }, RHenv=.95, sl_act_time=6, n_intrp=1, setup="rhoconst",
-                       test=False, it_output_l=[50, 100, 150, 200])
+                       }, RHenv=.95, sl_act_time=60, n_intrp=1, setup="slow_act",
+                       test=False, it_output_l=[100, 649, 699, 849])
                            #600, 850, 851, 1100,1101, 1350, 1351,1700,1701])
 
     ss.all_sym()
