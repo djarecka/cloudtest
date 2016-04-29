@@ -151,13 +151,15 @@ class Superdroplet(Micro):
                 if self.n_intrp > 1: self.interp_micro2adv()
                 if it==self.sl_act_it-1: all_water_i = self.state["rv"].sum() + self.state["rc"].sum()
             else:
-                if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
-                self.advection()
-                if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
-
+                #pdb.set_trace()
+                #if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
+                #self.advection()
+                #if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
+                #pdb.set_trace()
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step()
                 if self.n_intrp > 1: self.interp_micro2adv()
+                #pdb.set_trace()
                 if it==self.sl_act_it+self.nt-1: all_water_f = self.state["rv"].sum() + self.state["rc"].sum()
                 print "przed adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
                 if self.apr in ["S_adv_adj"]:
@@ -165,16 +167,25 @@ class Superdroplet(Micro):
                     self.epsilon_adj()
                     #pdb.set_trace()
                 print "po adjust", it, "%.25f" % self.state["rc"].sum(), "%.25f" % self.state["rv"].sum()
-                                                                                                            
-                                
-                #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
-            self.calc_S()
+            #if apr == "S_adv_adj": self.micro_adj() #TODO dolaczyc metode micro_adjust
 
+                #pdb.set_trace()
+            #    if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
+            #    self.advection()
+            #    if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
+                #pdb.set_trace()
+                
+
+            self.calc_S()
             
             for vv in ["S", "nc", "rc"]:
                 max_state[vv].append(self.state[vv].max())
                 meancl_state[vv].append(self.state[vv][np.where(self.state["rc"]>0)].mean())
             #pdb.set_trace()
+            if self.apr in ["S_adv", "S_adv_adj"]: self.rv2absS()
+            self.advection()
+            if self.apr in ["S_adv", "S_adv_adj"]: self.absS2rv()
+                                                
             
             if it in it_output:
                 #pdb.set_trace()
@@ -193,7 +204,7 @@ class Superdroplet(Micro):
     
 
 if __name__ == '__main__':
-    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv", C=.2, dt=.1, time_adv_tot=16, #76,
+    ss  = Superdroplet(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv", C=1., dt=.1, time_adv_tot=16, #76,
                        aerosol={
                            "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
                            "chem_b":.505, # blk_2m only (sect. 2 in Khvorosyanov & Curry 1999, JGR 104)
