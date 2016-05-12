@@ -17,7 +17,7 @@ rc_0   = np.array([5.e-4])
 nc_0   = np.array([0.  ])
 rr_0   = np.array([0.  ])
 nr_0   = np.array([0.  ])
-dt_0   = 1
+dt_0   = 2
 
 def condensation(lib, press = None, T = None, rv = None,
                  rc = None, nc = None, rr = None, nr = None, dt=dt_0):
@@ -66,23 +66,20 @@ def test_exeptions_wrongvalue(libname, arg):
     
 #@pytest.mark.skipif
 @pytest.mark.parametrize("arg", [
-        #({"rv" :  np.array([0.]),      "rc" :  np.array([0.])}), # no water
-        #({"rv" :  np.array([7.e-3]),   "rc" :  np.array([0.])}), # no cl water and subsat.
-        ({"rv" :  np.array([9.e-3]),  "rc" :  np.array([0.])}), # no cl water and supersat.
-        ({"rv" :  np.array([5.e-3]),   "rc" :  np.array([1.e-3])}), # subsat. leads to coplete evap.
-        #({"rv" :  np.array([8.e-3]),   "rc" :  np.array([1.e-3])}), # subsat. leads to some evap.
-        #({"rv" :  np.array([9.e-3]),   "rc" :  np.array([1.e-3])}), # supersat. leads to cond.
+        ({"rv" :  np.array([0.]),      "rc" :  np.array([0.])}), # no water
+        ({"rv" :  np.array([7.e-3]),   "rc" :  np.array([0.])}), # no cl water and subsat.
+        ({"rv" :  np.array([11.5e-3]), "rc" :  np.array([0.])}), # no cl water and supersat.
+        ({"rv" :  np.array([5.e-3]), "rc" :  np.array([1.e-3]), "nc" :  np.array([1.e8])}), # subsat. leads to coplete evap.
+        ({"rv" :  np.array([8.e-3]), "rc" :  np.array([1.e-3]), "nc" :  np.array([1.e8])}), # subsat. leads to some evap.
+        ({"rv" :  np.array([9.e-3]), "rc" :  np.array([1.e-3]), "nc" :  np.array([1.e8])}), # supersat. leads to cond.
     ])
 #TODO zastanowic sie nad epsilonem
-def test_expected_output_evapcond(libname, arg, epsilon = 0.1):
+def test_expected_output_evapcond(libname, arg, epsilon = 0.15):
     print "\n in test_expected value before cond.", arg
-    r_an = analytic_condensation(**arg)
+    r_an = analytic_condensation(rv=arg["rv"], rc=arg["rc"])
     rv, rc = condensation(lib=libname, **arg)
     #print "rv, rc po", rv, rc
-    for key, value in arg.items():
-        print "\n key, valuu, eval(key)", key, value, r_an[key]
-        #pdb.set_trace()
-        if key == "rv":
-            #pdb.set_trace()
-            assert abs(value - r_an[key]) <= epsilon * abs(r_an[key])
+    for key in ["rv", "rc"]:
+        print "\n key, valuu, eval(key)", key, arg[key], r_an[key]
+        assert abs(arg[key] - r_an[key]) <= epsilon * abs(r_an[key])
             
