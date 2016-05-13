@@ -72,7 +72,8 @@ def test_exeptions_wrongvalue(libname, arg):
         ({"rv" :  np.array([5.e-3]), "rc" :  np.array([1.e-3]), "nc" :  np.array([1.e8])}), # subsat. leads to coplete evap.
         ({"rv" :  np.array([8.e-3]), "rc" :  np.array([1.e-3]), "nc" :  np.array([1.e8])}), # subsat. leads to some evap.
         ({"rv" :  np.array([9.e-3]), "rc" :  np.array([1.e-3]), "nc" :  np.array([1.e8])}), # supersat. leads to cond.
-    ])
+        ({"rv" :  np.array([0.005077]), "rc" :  np.array([1.1958382416435485e-08]), "nc" :  np.array([241337.]), "T" : np.array([284.1]), "dt" : 0.1 }), #assert error 
+])
 #TODO zastanowic sie nad epsilonem
 def test_expected_output_evapcond(libname, arg, epsilon = 0.15):
     print "\n in test_expected value before cond.", arg

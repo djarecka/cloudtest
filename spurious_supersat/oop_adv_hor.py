@@ -78,10 +78,10 @@ class Micro:
             else:
                 raise Exception("the non-existent apr has been chosen, try trad or S_adv")
 
-        if scheme in ["sd", "2mom"]: 
+        if scheme in ["sd", "2m"]: 
             self.scheme = scheme
         else:
-            raise Exception("the non-existent apr has been chosen, try sd or 2mom")
+            raise Exception("the non-existent apr has been chosen, try sd or 2m")
                             
         self.setup = setup
         if self.setup=="rhoconst":
