@@ -1,19 +1,9 @@
-import sys
-import oop_adv_hor as ah
-import numpy as np
-import pdb
+from oop_adv_hor import Micro
 
-rho_d = np.ones(5)
-th_d = 295 * np.ones(5) 
-th_d[1:3] += 5
-rv =  np.arange(7, 12, 0.5) * 1.e-3
-del_S = np.empty(5)
+Test_micro = Micro(nx=5, dx=1, time_adv_tot=1, dt=1, C=1, aerosol={}, RHenv=.5, sl_sg=slice(1,3), apr="trad", setup="rhoconst",  n_intrp=1, sl_act_time=1, dir_name="none", test=True, it_output_l=[], scheme="sd")
 
 def test_supersat():
-    rho_d0 = rho_d.copy()
-    th_d0  = th_d.copy()
-    rv0    = rv.copy()
-    ah.rv2absS(del_S, rho_d, th_d, rv)
-    ah.absS2rv(del_S, rho_d, th_d, rv)
-#    pdb.set_trace()
-    assert (rv0 == rv).all()
+    rv0 = Test_micro.state["rv"].copy()
+    Test_micro.rv2absS()
+    Test_micro.absS2rv()
+    assert (rv0 == Test_micro.state["rv"]).all()

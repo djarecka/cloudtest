@@ -17,7 +17,7 @@ Aerosol={"meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6,
 }
 Dt, Nt, Nx, Dx, Sl_sg = 0.2, 51, 300, 2, slice(50,100)
 
-
+@pytest.mark.skipif
 @pytest.mark.parametrize("arg", [
    {"scheme":"sd", "apr":"trad", "setup":"rhoconst", "pl_flag":False, "nx":Nx,
     "sl_sg":Sl_sg, "crnt":1., "dt":Dt, "nt":Nt, "it_output_l":[Nt-1], "aerosol":Aerosol},
@@ -75,6 +75,6 @@ def test_data_compare_oop(tmpdir, arg, eps = 0.05):
 
     for key in data_ref:
         if key in ('rv', 'sd', "th_d", "na", "nc"):
-            #pdb.set_trace()
+            pdb.set_trace()
             assert np.isclose(np.array(data_test[key]), np.array(data_ref[key]), atol=0, rtol=eps).all()
                                     
