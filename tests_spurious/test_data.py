@@ -75,6 +75,5 @@ def test_data_compare_oop(tmpdir, arg, eps = 0.05):
 
     for key in data_ref:
         if key in ('rv', 'sd', "th_d", "na", "nc"):
-            pdb.set_trace()
             assert np.isclose(np.array(data_test[key]), np.array(data_ref[key]), atol=0, rtol=eps).all()
                                     
