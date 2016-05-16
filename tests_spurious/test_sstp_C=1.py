@@ -1,6 +1,4 @@
-import sys, glob, os
-import subprocess
-sys.path.insert(0, "./")
+import os
 import numpy as np
 import pytest
 import pdb
@@ -25,8 +23,11 @@ Dt, Nt, It_output_l, Nx, Dx, Sl_sg = 0.2, 51, [20, 50], 300, 2, slice(50,100)
      "aerosol":Aerosol, "sl_act_time":0, "n_intrp":1, "setup":"rhoconst",
      "test":False, "it_output_l":It_output_l, "sstp_cond":5, "RHenv":0.95},
 ])
-# checking if there are no oscilations in cloud water for courant=1
 def test_sstp_courant1(tmpdir, arg, eps = 0.01):
+    """
+    Checking if there are no oscillations in cloud water field for courant=1
+    for the simplest setup and 2 approaches: traditional and with advection of supersat.
+    """
     ss = Superdroplet(dirname=str(tmpdir), **arg)
     ss.all_sym()
 
@@ -36,5 +37,6 @@ def test_sstp_courant1(tmpdir, arg, eps = 0.01):
             data_test = json.load(f_test)
             rc_array = np.array(data_test["rc"])
             rc_array_nozero = rc_array[np.where(rc_array>0)]
+            # comparing the maximal value with the average cloud value of rc
             assert rc_array_nozero.max() / rc_array_nozero.mean() <= 1. + eps
                                     

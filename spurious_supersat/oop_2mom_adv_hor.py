@@ -54,7 +54,7 @@ class Eul_2mom(Micro):
         print "qc min, max po mikro", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max po mikro", self.state["nc"].min(), self.state["nc"].max()
                         
-
+        
         for k in ("th_d", "rv", "rc", "nc", "rr", "nr"):
             self.state[k] += self.state_dot["dot_"+k] * self.dt
 
@@ -119,7 +119,7 @@ class Eul_2mom(Micro):
 
 
 if __name__ == '__main__':
-    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv_adj",
+    micro_2mom = Eul_2mom(nx=300, dx=2, sl_sg=slice(50,100), apr="S_adv",
                           C=.2, dt=.1, time_adv_tot=26,
                           aerosol={
                               "meanr":.02e-6, "gstdv":1.4, "n_tot":1e9,
