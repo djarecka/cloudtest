@@ -15,6 +15,7 @@ Aerosol={"meanr":.02e-6, "gstdv":1.4, "n_tot":1000e6,
          "kappa":.61,    # lgrngn only (CCN-derived value from Table 1 in Petters and Kreidenweis 2007)
          "sd_conc":128 
 }
+
 Dt, Nt, Nx, Dx, Sl_sg = 0.2, 50, 300, 2, slice(50,100)
 
 @pytest.mark.skipif # the non-oop version is not updated. I will probably remove it soon
@@ -74,6 +75,6 @@ def test_data_compare_oop(tmpdir, arg, eps = 0.05):
 
     for key in data_ref:
         if key in ('rv', 'sd', "th_d", "na", "nc"):
-            #pdb.set_trace()
+            pdb.set_trace()
             assert np.isclose(np.array(data_test[key]), np.array(data_ref[key]), atol=0, rtol=eps).all()
                                     
