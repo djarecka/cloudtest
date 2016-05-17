@@ -1,15 +1,13 @@
-import sys
+import sys, os
 sys.path.append(".")
 sys.path.append("../")
-
-import pdb
 
 import libmpdata
 import libcloudphxx as libcl
 import numpy as np
 import math
 import json
-import os
+import pdb
 from subprocess import call
 
 import matplotlib
@@ -17,13 +15,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-
 import init_WH as wh
 import init_WH_rhoconst as wh_rho
 import init_slow_act as sl_act
 import init_default as dft
 
-#TODO przeniesc?
+
 def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     nrow = (len(dct)+1)/2
     fig, tpl = plt.subplots(nrows=nrow, ncols=2, figsize=(10,8.5))
@@ -37,12 +34,6 @@ def plotting(dct, time = None, figname="plot_test.pdf", ylim_dic = {}):
     plt.savefig(figname)
     plt.show()
 
-def saving_state(dic, filename):
-    dic_list = {}
-    for key, value in dic.iteritems():
-        dic_list[key] = value.tolist()
-    f_w = open(filename, 'w')
-    json.dump(dic_list, f_w)
 
 def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf", it0=0, it_step=1, show=False):
     nrow = (len(dct_max))
@@ -57,9 +48,18 @@ def plotting_timeevol(dct_max, dct_mean, figname="evol_test.pdf", it0=0, it_step
         i+=1
     plt.savefig(figname)
     if show: plt.show()
+
     
+def saving_state(dic, filename):
+    dic_list = {}
+    for key, value in dic.iteritems():
+        dic_list[key] = value.tolist()
+        f_w = open(filename, 'w')
+        json.dump(dic_list, f_w)
+        
 
 class Micro:
+    """ Parent class for both microphysical schemes """
     def __init__(self, nx, dx, time_adv_tot, dt, C, aerosol, RHenv, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme):
         self.nx = nx
         self.dx = dx
@@ -121,14 +121,15 @@ class Micro:
                                 
         
     def calc_S(self):
+        """ Calculating supersaturation and temperature, updating self.state. """
         for i in range(len(self.state["S"])):
             self.state["Temp"][i] = libcl.common.T(self.state["th_d"][i], self.state["rho_d"][i])
-            p = libcl.common.p(self.state["rho_d"][i], self.state["rv"][i], self.state["Temp"][i]) #TODO needed?
             p_v = self.state["rho_d"][i] * self.state["rv"][i] * libcl.common.R_v * self.state["Temp"][i] #TODO pomyslec o rho_D
             self.state["S"][i] = p_v / libcl.common.p_vs(self.state["Temp"][i]) - 1
                                             
 
     def rv2absS(self): #czy trzeba updatowac roho_d
+        """ Calculating del_S from rv and th_d -- used when advecting del_S instead of rv """
         for i in range(len(self.state["rho_d"])):
             Temp = libcl.common.T(self.state["th_d"][i], self.state["rho_d"][i])
             pvs =  libcl.common.p_vs(Temp)
@@ -136,6 +137,7 @@ class Micro:
             self.state["del_S"][i] = self.state["rv"][i] - rvs
             
     def absS2rv(self):
+        """ Calculating rv from del_S and th_d -- used when advecting del_S instead of rv """
         for i in range(len(self.state["rho_d"])):
             Temp = libcl.common.T(self.state["th_d"][i], self.state["rho_d"][i])
             pvs =  libcl.common.p_vs(Temp)
@@ -143,10 +145,12 @@ class Micro:
             self.state["rv"][i] = self.state["del_S"][i] + rvs
                                                                         
     def advection(self):
+        """ Using advection scheme from mpdata library """
         for var in self.var_adv:
             libmpdata.mpdata(self.state[var], self.C, 1);
                                     
-    def epsilon_adj(self): #TODO musze zrobic lepiej
+    def epsilon_adj(self): #TODO better?
+        """ adjusting rc to keep water; some problems, dont really use """
         L = 2.5e6 #TODO
         for i in range(len(self.state["rho_d"])):
             Temp = libcl.common.T(self.state["th_d"][i], self.state["rho_d"][i])
@@ -168,4 +172,4 @@ class Micro:
             th = libcl.common.th_dry2std(self.state["th_d"][i], self.state["rv"][i])
             th += L/libcl.common.c_pd * (libcl.common.p_1000/p)**(libcl.common.R_d/libcl.common.c_pd) * self.state["eps"][i]
             self.state["th_d"][i] = libcl.common.th_std2dry(th, self.state["rv"][i])
-        self.rc_adjust()
+        self.rc_adjust() # using method from a child class, various for different schemes

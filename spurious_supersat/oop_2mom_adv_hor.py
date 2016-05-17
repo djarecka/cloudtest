@@ -5,7 +5,7 @@ import math
 import json
 import os
 from subprocess import call
-
+import pdb
 
 import init_WH_rhoconst as wh_rho
 import init_slow_act as sl_act
@@ -13,17 +13,18 @@ import init_default as dft
 
 from oop_adv_hor import Micro, plotting, saving_state
 
-import pdb
 
 class Eul_2mom(Micro):
+    """ Class for 2-mom Eulerian microphysics; inherits from Micro. """
     def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, RHenv, setup="rhoconst", n_intrp=1, test=True, dirname_pre = "test", dirname=None, it_output_l=[]):
+        # creating a name for output dir
         if dirname:
             dir_name = dirname
         else:
             dir_name = dirname_pre+"_scheme=2mom_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
-        #pdb.set_trace()
+        # calling Micro parent class 
         Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, RHenv, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="2m")
-
+        # calling a microphysics scheme from libcloudphxx library; defining opts
         self.opts = libcl.blk_2m.opts_t()
         self.opts.acti = self.opts.cond = True
         self.opts.acnv = self.opts.accr = self.opts.sedi = False
@@ -33,14 +34,16 @@ class Eul_2mom(Micro):
             "N_stp"   : aerosol["n_tot"],
             "chem_b"  : aerosol["chem_b"]
         }]
-        
+        # creating dictionaries for model variables and forcings from microphysical update
         self.state_dot = dict((k, np.zeros(self.nx)) for k in ('dot_rc', 'dot_rv', 'dot_th_d', "dot_nc", "dot_rr", "dot_nr"))
         self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
-                
+
         
     def micro_step(self):
+        """ Defining microphysical step """
         print "qc min, max przed mikro", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max przed mikro", self.state["nc"].min(), self.state["nc"].max()
+        # dot_ variables have to be zero before rhs_cellwise
         for k in ("dot_th_d", "dot_rv", "dot_rc", "dot_nc", "dot_rr", "dot_nr"):
             self.state_dot[k] *= 0.
         #pdb.set_trace()
@@ -58,33 +61,38 @@ class Eul_2mom(Micro):
         for k in ("th_d", "rv", "rc", "nc", "rr", "nr"):
             self.state[k] += self.state_dot["dot_"+k] * self.dt
 
-        #pdb.set_trace()
+        # rc, nc can be sometimes smaller than zero -- TODO!!
         np.place(self.state["rc"], self.state["rc"]<0, 0)
         np.place(self.state["nc"], self.state["nc"]<0, 0)
         print "qc min, max po place", self.state["rc"].min(), self.state["rc"].max()
         print "nc min, max po place", self.state["nc"].min(), self.state["nc"].max()
                         
     def rc_adjust(self):
+        """ function used for rc update to keep water than advecting S; doesnt work!!!
+            not sure if make sense for this version of 2mom scheme; TODO!! """
         self.state["rc"] += self.state["eps"]
                 
     def all_sym(self):
+        """ Full symulation """ 
         self.calc_S()
         print "po S", self.state["S"].max()
         plotting(self.dic_var, figname=os.path.join(self.plotdir, "TestplotRH5_init.pdf"), time="init")
         if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "init.txt"))
         it_output = self.it_output
 
+        # calculating some statistics
         max_state = {}
         meancl_state = {}
         for vv in ["S", "nc", "rc"]:
             max_state[vv] = []
             meancl_state[vv] = []
-            
+        
+        # time loop     
         for it in range(self.nt+self.sl_act_it):
             print "it", it, it < self.sl_act_it
-                
+            # if slow_act setup, first part is without advection ; does it make sense for 2mom?? TODO 
             if it < self.sl_act_it:
-                self.slow_act()
+                self.slow_act() # TODO for 2m!
                 if self.n_intrp > 1: self.interp_adv2micro()
                 self.micro_step(adve=False)
                 if self.n_intrp > 1: self.interp_micro2adv()
@@ -109,7 +117,7 @@ class Eul_2mom(Micro):
             for vv in ["S", "nc", "rc"]:
                 max_state[vv].append(self.state[vv].max())
                 meancl_state[vv].append(self.state[vv][np.where(self.state["rc"]>0)].mean())
-
+            # plotting and saving variables
             if it in it_output:
                 #pdb.set_trace()
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', "nc", "th_d", "S", "Temp"))
