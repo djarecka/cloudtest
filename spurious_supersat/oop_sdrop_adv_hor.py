@@ -71,7 +71,8 @@ class Superdroplet(Micro):
         x_micro = (np.arange(self.opts_init.nx) + 1. /2) / float(self.n_intrp)
         for var in ["rv", "th_d", "rho_d", "sd", "na", "nc", "rc"]:
             self.state[var] = np.interp(x_adv, x_micro, self.state_micro[var])
-                                                    
+        if self.n_intrp > 1:
+            self.state["sd"] *= self.n_intrp
 
     def fake_interp_adv2micro(self):
         """ fake interpolation, only for testing """
@@ -182,7 +183,7 @@ class Superdroplet(Micro):
             if it in it_output:
                 #pdb.set_trace()
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'sd', "na", "nc", "th_d", "S"))
-                plotting(self.dic_var, figname=os.path.join(self.plotdir, "newplot_slowit"+str(self.sl_act_it)+"_Crr"+str(self.C)+"_nintrp"+str(self.n_intrp)+"_it="+str((it+1)*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
+                plotting(self.dic_var, figname=os.path.join(self.plotdir,"profiles_time="+str((it+1)*self.dt)+"s.pdf"), time=str(self.dt*(it-self.sl_act_it)), ylim_dic={"S":[-0.005, 0.015]})
                 if not self.test:
                     saving_state(self.dic_var, filename=os.path.join(self.outputdir, "it="+str(int(self.dt*(it+1-self.sl_act_it)))+"s.txt"))
     
@@ -190,8 +191,9 @@ class Superdroplet(Micro):
 
         #print "all_water, init, final, rel_diff", all_water_i, all_water_f, (all_water_i-all_water_f)/all_water_i
         plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max.pdf"))
-        plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_fullstep.pdf"), it0=1, it_step=int(1/self.C))
-        plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_halfstep.pdf"), it0=1+int(0.5/self.C), it_step=int(1/self.C), show=False)
+        # TODO pomyslec, czy ma sens; self.C moze byc 0
+        #plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_fullstep.pdf"), it0=1, it_step=int(1/self.C))
+        #plotting_timeevol(max_state, meancl_state, figname=os.path.join(self.plotdir, "ewolucja_max_halfstep.pdf"), it0=1+int(0.5/self.C), it_step=int(1/self.C), show=False)
         
     
 
