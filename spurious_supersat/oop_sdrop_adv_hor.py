@@ -2,28 +2,30 @@ import sys
 sys.path.append(".")
 sys.path.append("../")
 
-import pdb
-
 import libcloudphxx as libcl
 import numpy as np
 import math
 import json
 import os
+import pdb
 
 from oop_adv_hor import Micro, plotting_timeevol, plotting, saving_state 
 
 class Superdroplet(Micro):
+    """ Class for Lagrangian microphysics; inherits from Micro. """
     def __init__(self, nx, dx, sl_sg, apr, C, dt, time_adv_tot, sl_act_time, aerosol, RHenv, setup="rhoconst", n_intrp=1, sstp_cond=1, test=True, dirname_pre = "test", dirname=None, it_output_l = []):
+        # creating a name for output dir 
         if dirname:
             dir_name = dirname
         else:
             dir_name = dirname_pre+"_scheme=sd_conc="+str(int(aerosol["sd_conc"]))+"_setup="+setup+"_apr="+apr+"_dt="+str(dt)+"_dx="+str(dx)+"_C="+str(C) + "_ntot="+str(int(aerosol["n_tot"]/1.e6))
-        #pdb.set_trace()
+        # calling Micro parent class
         Micro.__init__(self, nx, dx, time_adv_tot, dt, C, aerosol, RHenv, sl_sg, apr, setup, n_intrp, sl_act_time, dir_name, test, it_output_l, scheme="sd")
          
         #TODO czy to sie updatuje??/ nie jak jest n_intrp>1 - pomyslec!
+        # creating a dictionary for model variables 
         self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'th_d', "Temp", "S", "nc"))
-        
+        # calling a microphysics scheme from libcloudphxx library; defining opts  
         self.opts_init = libcl.lgrngn.opts_init_t()
         self.opts_init.dt = dt
         self.opts_init.nx = self.nx * self.n_intrp 
@@ -56,6 +58,7 @@ class Superdroplet(Micro):
         self.micro.init(self.state_micro["th_d"], self.state_micro["rv"], self.state_micro["rho_d"], self.C_arr)
         
     def interp_adv2micro(self):
+        """ function for fields interpolation; smaller dx for microphysics """
         x_adv = np.arange(self.nx) + 1 / 2.
         x_micro = (np.arange(self.opts_init.nx) + 1 / 2.) / float(self.n_intrp)
         #pdb.set_trace()
@@ -63,6 +66,7 @@ class Superdroplet(Micro):
             self.state_micro[var] = np.interp(x_micro, x_adv, self.state[var])
             
     def interp_micro2adv(self):
+        """ function for fields interpolation; biger dx for advection """
         x_adv = np.arange(self.nx) +1 / 2.
         x_micro = (np.arange(self.opts_init.nx) + 1. /2) / float(self.n_intrp)
         for var in ["rv", "th_d", "rho_d", "sd", "na", "nc", "rc"]:
@@ -70,13 +74,14 @@ class Superdroplet(Micro):
                                                     
 
     def fake_interp_adv2micro(self):
+        """ fake interpolation, only for testing """
         x_adv = np.arange(self.nx) + 1 / 2.
         x_micro = (np.arange(self.opts_init.nx) + 1 / 2.) / float(self.n_intrp)
-        #pdb.set_trace()
         for var in ["rv", "th_d", "rho_d", "sd", "na", "nc", "rc"]:
             self.state_micro[var] = np.repeat(self.state[var], self.n_intrp)
             
     def fake_interp_micro2adv(self):
+        """ fake interpolation, only for testing """
         x_adv = np.arange(self.nx) +1 / 2.
         x_micro = (np.arange(self.opts_init.nx) + 1. /2) / float(self.n_intrp)
         for var in ["rv", "th_d", "rho_d", "sd", "na", "nc", "rc"]:
@@ -84,6 +89,7 @@ class Superdroplet(Micro):
                 self.state[var][i] = self.state_micro[var][i*self.n_intrp:(i+1)*self.n_intrp].mean()
             
     def micro_step(self, adve=True, cond=True):
+        """ Defining microphysical step """
         libopts = libcl.lgrngn.opts_t()
         libopts.cond = cond
         libopts.adve = adve
@@ -125,25 +131,25 @@ class Superdroplet(Micro):
             pass
 
     def all_sym(self):
+        """ Full symulation """
         self.calc_S()
         print "po S", self.state["S"].max()
         plotting(self.dic_var, figname=os.path.join(self.plotdir, "TestplotRH5_init.pdf"), time="init")
         if not self.test: saving_state(self.dic_var, filename=os.path.join(self.outputdir, "init.txt"))
 
-        it_output = self.it_output#[2, 5, 20, 20, 50, 100, self.sl_act_it/4., self.sl_act_it/2., self.sl_act_it*3./4]
-#        for Dx in [0, 5, 10, 20, 50, 100, 150, 200]:
-#            it_out = Dx * 1./ self.C
-#            for i in [1, 1+int(0.5/self.C)]:#range(1,2):#int(1/self.C)+2):
-#                it_output.append(self.sl_act_it + it_out + i)
-                                                                                    
+        it_output = self.it_output
+
+        # calculating some statistics
         max_state = {}
         meancl_state = {}
         for vv in ["S", "nc", "rc"]:
             max_state[vv] = []
             meancl_state[vv] = []
 
+        # time loop
         for it in range(self.nt+self.sl_act_it):
             print "it", it, it < self.sl_act_it
+            # if slow_act setup, first part is without advection
             if it < self.sl_act_it:
                 self.slow_act()
                 if self.n_intrp > 1: self.interp_adv2micro()
@@ -172,7 +178,7 @@ class Superdroplet(Micro):
             for vv in ["S", "nc", "rc"]:
                 max_state[vv].append(self.state[vv].max())
                 meancl_state[vv].append(self.state[vv][np.where(self.state["rc"]>0)].mean())
-            
+            # plotting and saving variables
             if it in it_output:
                 #pdb.set_trace()
                 self.dic_var = dict((k, self.state[k]) for k in ('rc', 'rv', 'sd', "na", "nc", "th_d", "S"))
